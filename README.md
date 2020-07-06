@@ -36,7 +36,7 @@ https://www.planet4589.org/space/log/satcat.txt both maintained by Jonathan C. M
 ## Features
 
  - parsing launchlogy.txt
- - parseing satcat.txt
+ - parsing satcat.txt
 
 ## TODO 
  - choosing more satellite data
