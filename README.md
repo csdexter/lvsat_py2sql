@@ -42,11 +42,11 @@ https://www.planet4589.org/space/log/satcat.txt both maintained by Jonathan C. M
  - online mode
  - easier updating?
  
-## USAGE 
+## Usage 
 
 In order for this to work, make sure you have both reference files mentioned above in the same folder as this script.
 
-The script assumes you have a suited database aready created (more details to follow)
+The script assumes you have Python3 installed and a suited PostgreSQL database aready created and configured (more details to follow).
 
     python lvsat_py2sql.py >> launches.sql
 
