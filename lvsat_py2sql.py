@@ -34,18 +34,18 @@ with open(filepath_lv) as fp:                                                   
 
         if line_lv[0:1].strip() != "" :                                         # skipping the lines dealing only with payloads (treated differently)
             launchID = line_lv[0:10].strip()
-            print("INSERT INTO launches VALUES ('"+launchID
-                +"','"+line_lv[13:18].strip()+f_month
+            print("INSERT INTO launches VALUES ('"+launchID                     # launchID
+                +"','"+line_lv[13:18].strip()+f_month                           # launchDate
                 +line_lv[22:23].strip()+filler
                 +line_lv[23:27]+":"+line_lv[27:29]
-                +"','"+line_lv[40:55].strip()
-                +"','"+line_lv[55:86].strip()                                   # for launches table, only the first payload is mentioned
-                +"','"+line_lv[86:112].strip()                                  # for the full payload configuration, see satellited table
-                +"','"+line_lv[112:121].strip()
-                +"','"+line_lv[121:144].strip()
-                +"','"+line_lv[144:160].strip()
-                +"','"+line_lv[160:193].strip()
-                +"','"+line_lv[193:194].strip()
+                +"','"+line_lv[40:55].strip()                                   # COSPAR
+                +"','"+line_lv[55:86].strip()                                   # postPayload | for launches table, only the first payload is mentioned
+                +"','"+line_lv[86:112].strip()                                  # prePayload  | for the full payload configuration, see satellited table
+                +"','"+line_lv[112:121].strip()                                 # SATCAT
+                +"','"+line_lv[121:144].strip()                                 # LV_type
+                +"','"+line_lv[144:160].strip()                                 # LV_serial
+                +"','"+line_lv[160:193].strip()                                 # launchSite
+                +"','"+line_lv[193:194].strip()                                 # outcome
                 +"')")
 
             for x in range(len(sat_array)):                         	        # looking for a match in satcat.txt
@@ -53,25 +53,25 @@ with open(filepath_lv) as fp:                                                   
                     match = x
 
             print("INSERT INTO satellites VALUES ('"+launchID
-                +"','"+line_lv[40:55].strip()
-                +"','"+line_lv[55:86].strip()
-                +"','"+line_lv[86:112].strip()
-                +"','"+sat_array[match][89:102].strip()
-                +"','"+sat_array[match][112:121].strip()
-                +"','"+sat_array[match][166:175].strip()
-                +"','"+sat_array[match][156:167].strip()
-                +"','"+sat_array[match][177:198].replace(" ", "")
+                +"','"+line_lv[40:55].strip()                                   # COSPAR
+                +"','"+line_lv[55:86].strip()                                   # postPayload
+                +"','"+line_lv[86:112].strip()                                  # prePayload
+                +"','"+sat_array[match][89:102].strip()                         # owner
+                +"','"+line_lv[112:121].strip()                                 # SATCAT
+                +"','"+sat_array[match][166:175].strip()                        # orbitPrd
+                +"','"+sat_array[match][156:167].strip()                        # orbitClass
+                +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
                 +"')")
         else:
             print("INSERT INTO satellites VALUES ('"+launchID
-                +"','"+line_lv[40:55].strip()
-                +"','"+line_lv[55:86].strip()
-                +"','"+line_lv[86:112].strip()
-                +"','"+sat_array[match][89:102].strip()
-                +"','"+sat_array[match][112:121].strip()
-                +"','"+sat_array[match][166:175].strip()
-                +"','"+sat_array[match][156:167].strip()
-                +"','"+sat_array[match][177:198].replace(" ", "")
+                +"','"+line_lv[40:55].strip()                                   # COSPAR
+                +"','"+line_lv[55:86].strip()                                   # postPayload
+                +"','"+line_lv[86:112].strip()                                  # prePayload
+                +"','"+sat_array[match][89:102].strip()                         # owner
+                +"','"+line_lv[112:121].strip()                                 # SATCAT
+                +"','"+sat_array[match][166:175].strip()                        # orbitPrd
+                +"','"+sat_array[match][156:167].strip()                        # orbitClass
+                +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
                 +"')")
 
         filler = ""
