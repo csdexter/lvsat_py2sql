@@ -11,8 +11,6 @@ filepath_sat = 'satcat.txt'
 with open(filepath_sat) as sat_file:                                            # the content of "satcat.txt" is stored in sat_array[]
     sat_array = sat_file.readlines()
 
-numline = len(sat_array)
-
 with open(filepath_lv) as fp:                                                   # "launchlogy.txt" is not stored, it's processed as it's read
     line_lv = fp.readline()
     line_lv = fp.readline()
@@ -50,7 +48,7 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+line_lv[193:194].strip()
                 +"')")
 
-            for x in range(numline):                         	                # looking for a match in satcat.txt
+            for x in range(len(sat_array)):                         	                # looking for a match in satcat.txt
                 if (sat_array[x][0:8].strip()) == ("S0"+line_lv[113:120].strip()):  # SATCAT have an extra 0 digit in satcat.txt
                     match = x
 
