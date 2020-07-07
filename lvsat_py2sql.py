@@ -43,8 +43,8 @@ with open(filepath_lv) as fp:
                 +line_lv[22:23].strip()+filler
                 +line_lv[23:27]+":"+line_lv[27:29]
                 +"','"+line_lv[40:55].strip()
-                +"','"+line_lv[55:86].strip()
-                +"','"+line_lv[86:112].strip()
+                +"','"+line_lv[55:86].strip()                                   # for launches table, only the first payload is mentioned
+                +"','"+line_lv[86:112].strip()                                  # for the full payload configuration, see satellited table
                 +"','"+line_lv[112:121].strip()
                 +"','"+line_lv[121:144].strip()
                 +"','"+line_lv[144:160].strip()
