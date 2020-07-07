@@ -48,26 +48,30 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+line_lv[193:194].strip()
                 +"')")
 
-            for x in range(len(sat_array)):                         	                # looking for a match in satcat.txt
-                if (sat_array[x][0:8].strip()) == ("S0"+line_lv[113:120].strip()):  # SATCAT have an extra 0 digit in satcat.txt
+            for x in range(len(sat_array)):                         	        # looking for a match in satcat.txt
+                if sat_array[x][0:8].strip()==("S0"+line_lv[113:120].strip()):  # SATCAT have an extra 0 digit in satcat.txt
                     match = x
 
             print("INSERT INTO satellites VALUES ('"+launchID
                 +"','"+line_lv[40:55].strip()
                 +"','"+line_lv[55:86].strip()
                 +"','"+line_lv[86:112].strip()
-                +"','"+line_lv[112:121].strip()
+                +"','"+sat_array[match][89:102].strip()
+                +"','"+sat_array[match][112:121].strip()
+                +"','"+sat_array[match][166:175].strip()
                 +"','"+sat_array[match][156:167].strip()
-                +"','"+sat_array[match][177:198].strip()
+                +"','"+sat_array[match][177:198].replace(" ", "")
                 +"')")
         else:
             print("INSERT INTO satellites VALUES ('"+launchID
                 +"','"+line_lv[40:55].strip()
                 +"','"+line_lv[55:86].strip()
                 +"','"+line_lv[86:112].strip()
-                +"','"+line_lv[112:121].strip()
+                +"','"+sat_array[match][89:102].strip()
+                +"','"+sat_array[match][112:121].strip()
+                +"','"+sat_array[match][166:175].strip()
                 +"','"+sat_array[match][156:167].strip()
-                +"','"+sat_array[match][177:198].strip()
+                +"','"+sat_array[match][177:198].replace(" ", "")
                 +"')")
 
         filler = ""
