@@ -46,13 +46,13 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+line_lv[144:160].strip()                                 # LV_serial
                 +"','"+line_lv[160:193].strip()                                 # launchSite
                 +"','"+line_lv[193:194].strip()                                 # outcome
-                +"')")
+                +"');")
 
             for x in range(len(sat_array)):                         	        # looking for a match in satcat.txt
                 if sat_array[x][0:8].strip()==("S0"+line_lv[113:120].strip()):  # SATCAT have an extra 0 digit in satcat.txt
                     match = x
 
-            print("INSERT INTO satellites VALUES ('"+launchID
+            print("INSERT INTO satellites VALUES ('"+launchID                   # launchID
                 +"','"+line_lv[40:55].strip()                                   # COSPAR
                 +"','"+line_lv[55:86].strip()                                   # postPayload
                 +"','"+line_lv[86:112].strip()                                  # prePayload
@@ -61,9 +61,9 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+sat_array[match][166:175].strip()                        # orbitPrd
                 +"','"+sat_array[match][156:167].strip()                        # orbitClass
                 +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
-                +"')")
+                +"');")
         else:
-            print("INSERT INTO satellites VALUES ('"+launchID
+            print("INSERT INTO satellites VALUES ('"+launchID                   # launchID
                 +"','"+line_lv[40:55].strip()                                   # COSPAR
                 +"','"+line_lv[55:86].strip()                                   # postPayload
                 +"','"+line_lv[86:112].strip()                                  # prePayload
@@ -72,7 +72,7 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+sat_array[match][166:175].strip()                        # orbitPrd
                 +"','"+sat_array[match][156:167].strip()                        # orbitClass
                 +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
-                +"')")
+                +"');")
 
         filler = ""
         f_month=""
