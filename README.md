@@ -40,14 +40,41 @@ https://www.planet4589.org/space/log/satcat.txt both created and maintained by J
 
 ## TODO
  - choosing more satellite data
- - online mode
+ - online mode?
  - easier updating?
  - code cleanup
 
 ## Usage
 
+	python lvsat_py2sql.py >> launches.sql
+
 In order for this to work, make sure you have both reference files mentioned above in the same folder as this script.
 
-The script assumes you have Python3 installed and a suited PostgreSQL database aready created and configured (more details to follow).
+The script assumes you have Python3 installed and a suited PostgreSQL database aready created and configured, as specified below:
+    
+	CREATE DATABASE launchesdb;
 
-    python lvsat_py2sql.py >> launches.sql
+	CREATE TABLE launches (
+	launchID TEXT,
+	launchDate TIMESTAMP,
+	COSPAR TEXT,
+	postPayload TEXT,
+	prePayload TEXT,
+	SATCAT TEXT,
+	LV_type TEXT,
+	LV_serial TEXT,
+	launchSite TEXT,
+	outcome TEXT
+	);
+		
+	CREATE TABLE satellites (
+	COSPAR TEXT,
+	postPayload TEXT,
+	prePayload TEXT,
+	owner TEXT,
+	SATCAT TEXT,
+	orbitPrd TEXT,
+	orbitClass TEXT,
+	orbitPAI TEXT
+	);
+
