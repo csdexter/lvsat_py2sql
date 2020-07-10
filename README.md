@@ -49,7 +49,7 @@ https://www.planet4589.org/space/log/satcat.txt both created and maintained by J
 
 	python lvsat_py2sql.py >> launchesdb.sql
 
-In order for this to work, make sure you have both reference files mentioned above in the same folder as this script. Also, please read the Quirks section below.
+In order for this to work, make sure you have both reference files mentioned above in the same folder as this script. Also, please read the Quirks section below. A generated and fully usable `launchesdb.sql` file is also provided, but you can generate your own updated version. 
 
 The script assumes you have Python3 installed and a suited PostgreSQL database aready created and configured, as specified below:
     
@@ -82,4 +82,4 @@ The script assumes you have Python3 installed and a suited PostgreSQL database a
 	
 ### Quirks
 
-There are two dirty little things that needs to be taken care of outside this script, before the resulting 'launchesdb.sql' file could be imported into a database. I was too lazy to have the script do this, maybe I will in the future. Namely, in both 'satcat.txt' and 'launchlogy.txt' files there's an entry called "Ven{\mu}s" that causes an error during database import. I manually modify that to "Venmus" (this can be done before or after parsing the files: modifying the original files or modifying the resulted 'launchesdb.sql' file). Then, PostgreSQL doesn't like entries with apostrophe, so I used a text editor to replace all the apostrophes from both 'satcat.txt' and 'launchlogy.txt' files, before parsing them with the script.
+There are two dirty little things that needs to be taken care of outside this script, before the resulting `launchesdb.sql` file could be imported into a database. I was too lazy to have the script do this, maybe I will in the future. Namely, in both `satcat.txt` and `launchlogy.txt` files there's an entry called "Ven{\mu}s" that causes an error during database import. I manually modify that to "Venmus" (this can be done before or after parsing the files: modifying the original files or modifying the resulted `launchesdb.sql` file). Then, PostgreSQL doesn't like entries with apostrophe, so I used a text editor to replace all the apostrophes from both `satcat.txt` and `launchlogy.txt` files, before parsing them with the script.
