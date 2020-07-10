@@ -2,7 +2,7 @@
 
 Script for parsing historical orbital launch data into SQL statements.
 Original data source are the following lists https://planet4589.org/space/log/launchlogy.txt and
-https://www.planet4589.org/space/log/satcat.txt both created and maintained by Jonathan C. McDowell.
+https://www.planet4589.org/space/log/satcat.txt both created and maintained by Jonathan C. McDowell. Source files used with permission from their author.
 
 ## launchlogy.txt format
 
