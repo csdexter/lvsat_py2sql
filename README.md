@@ -68,6 +68,7 @@ The script assumes you have Python3 installed and a suited PostgreSQL database a
 	);
 		
 	CREATE TABLE satellites (
+	launchID TEXT,
 	COSPAR TEXT,
 	postPayload TEXT,
 	prePayload TEXT,
