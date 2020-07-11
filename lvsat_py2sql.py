@@ -19,8 +19,6 @@ with open(filepath_lv) as fp:                                                   
 
     while line_lv:
 
-        line_lv.replace("'","''")                                               # the apostrophe is doubled, for correct PostgreSQL handling
-
         if line_lv[22].strip()=='' : filler="0"                                 # converting single-digit day number to two-digit, by adding a leading 0
         if line_lv[18:21] == "Jan" : f_month="-01-"                             # converting dates to timestamp format accepted by PostgreSQL
         if line_lv[18:21] == "Feb" : f_month="-02-"
