@@ -4,9 +4,6 @@ import os
 def db_reinit():
     print("DROP TABLE satellites;")
     print("DROP TABLE launches;")
-    print("DROP DATABASE launchesdb;")
-
-    print("CREATE DATABASE launchesdb;")
 
     print("CREATE TABLE launches (")
     print("launchID TEXT,")
