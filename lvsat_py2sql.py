@@ -16,7 +16,7 @@ def db_reinit():
     print("LV_serial TEXT,")
     print("launchSite TEXT,")
     print("launchPad TEXT,")
-    print("lsState, TEXT,")
+    print("lsState TEXT,")
     print("outcome TEXT")
     print(");")
 
