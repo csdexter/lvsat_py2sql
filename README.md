@@ -10,39 +10,39 @@ Original data source are the following lists (not redistributed here, get them f
 
 ## launchlogy.txt format
 
-    000 launchID    text      Launch (international designation)
-    013 launchDate  timestamp Launch Date (UTC)
-    034 COSPAR      text      COSPAR designation (payload)
-    055 postPayload text      Payload name (after launch)
-    086 prePayload  text      Payload name (before launch)
-    112 SATCAT      text      SATCAT number (payload)
-    121 LV_type     text      LV type and name
-    144 LV_serial   text      LV serial number
-    160 launchSite  text      Launch site
-    169 launchPad   text      Launch pad
-    193 outcome     text      Outcome
-    198 ref         text      Reference
+    000 launchID    TEXT      Launch (international designation)
+    013 launchDate  TIMESTAMP Launch Date (UTC)
+    034 COSPAR      TEXT      COSPAR designation (payload)
+    055 postPayload TEXT      Payload name (after launch)
+    086 prePayload  TEXT      Payload name (before launch)
+    112 SATCAT      TEXT      SATCAT number (payload)
+    121 LV_type     TEXT      LV type and name
+    144 LV_serial   TEXT      LV serial number
+    160 launchSite  TEXT      Launch site
+    169 launchPad   TEXT      Launch pad
+    193 outcome     TEXT      Outcome
+    198 ref         TEXT      Reference
 
 ## satcat.txt format
 
-    000  SATCAT     text      SATCAT number
-    008  COSPAR     text      COSPAR designation
-    023  satName    text      Official name
-    064  secName    text      Secondary name or prelaunch name.
-    089  owner      text      Owner/Operator
-    102  launchDate timestamp Launch Date (UTC)
-    114  currStatus text      Current Status
-    132  dateStatus timestamp Date of Status
-    144  orbitEpoch timestamp Date of orbit epoch
-    156  orbitClass text      Orbital class
-    165  orbitPrd   text      Orbit period (minutes)
-    175  orbitPAI   text      Orbit Perigee x Apogee x Inclination
+    000  SATCAT     TEXT      SATCAT number
+    008  COSPAR     TEXT      COSPAR designation
+    023  satName    TEXT      Official name
+    064  secName    TEXT      Secondary name or prelaunch name.
+    089  owner      TEXT      Owner/Operator
+    102  launchDate TIMESTAMP Launch Date (UTC)
+    114  currStatus TEXT      Current Status
+    132  dateStatus TIMESTAMP Date of Status
+    144  orbitEpoch TIMESTAMP Date of orbit epoch
+    156  orbitClass TEXT      Orbital class
+    165  orbitPrd   TEXT      Orbit period (minutes)
+    175  orbitPAI   TEXT      Orbit Perigee x Apogee x Inclination
 
 ## sites.txt format
 
-    000 lsSite      text      Launch site code (as in launchlogy.txt)
-    040 lsState     text      Launch site state (country)
-    093 lsName      text      Launch site full name
+    000 lsSite      TEXT      Launch site code (as in launchlogy.txt)
+    040 lsState     TEXT      Launch site state (country)
+    093 lsName      TEXT      Launch site full name
 
 ## Features
 
