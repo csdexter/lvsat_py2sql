@@ -1,8 +1,12 @@
 ## Description
 
 Script for parsing historical orbital launch data into SQL statements.
-Original data source are the following lists https://planet4589.org/space/log/launchlogy.txt and
-https://www.planet4589.org/space/log/satcat.txt both created and maintained by Jonathan C. McDowell. Source files used with permission from their author.
+
+Original data source are the following lists, created and maintained by Jonathan C. McDowell and used here with permission from their author.
+
+- Standard master orbital list (https://planet4589.org/space/log/launchlogy.txt)
+- Master Satellite List (https://www.planet4589.org/space/log/satcat.txt)
+- Launch Sites Database (https://planet4589.org/space/gcat/data/tables/sites.html)
 
 ## launchlogy.txt format
 
@@ -37,22 +41,24 @@ https://www.planet4589.org/space/log/satcat.txt both created and maintained by J
 
  - parsing launchlogy.txt
  - parsing satcat.txt
+ - cleaning up the strings for PostgreSQL compliant format
 
 ## TODO
 
  - choosing more satellite data
+ - integrating launch sites/complexes
  - online mode?
  - easier updating?
- - code cleanup
+ - code cleanup and optimization
 
 ## Usage
 
 	python lvsat_py2sql.py >> launchesdb.sql
 
-In order for this to work, make sure you have both reference files mentioned above in the same folder as this script. Also, please read the Quirks section below. A generated and fully usable `launchesdb.sql` file is also provided, but you can generate your own updated version. 
+In order for this to work, make sure you have both reference files mentioned above in the same folder as this script. A generated and fully usable `launchesdb.sql` file is also provided, but you can generate your own updated version.
 
-The script assumes you have Python3 installed and a suited PostgreSQL database aready created and configured, as specified below:
-    
+The script assumes you have Python3 installed and a suited PostgreSQL database already created and configured, as specified below:
+
 	CREATE DATABASE launchesdb;
 
 	CREATE TABLE launches (
@@ -67,7 +73,7 @@ The script assumes you have Python3 installed and a suited PostgreSQL database a
 	launchSite TEXT,
 	outcome TEXT
 	);
-		
+
 	CREATE TABLE satellites (
 	launchID TEXT,
 	COSPAR TEXT,
@@ -79,7 +85,3 @@ The script assumes you have Python3 installed and a suited PostgreSQL database a
 	orbitClass TEXT,
 	orbitPAI TEXT
 	);
-	
-### Quirks
-
-There are two dirty little things that needs to be taken care of outside this script, before the resulting `launchesdb.sql` file could be imported into a database. I was too lazy to have the script do this, maybe I will in the future. Namely, in both `satcat.txt` and `launchlogy.txt` files there's an entry called "Ven{\mu}s" that causes an error during database import. I manually modify that to "Venmus" (this can be done before or after parsing the files: modifying the original files or modifying the resulted `launchesdb.sql` file). Then, PostgreSQL doesn't like entries with apostrophe, so I used a text editor to replace all the apostrophes from both `satcat.txt` and `launchlogy.txt` files, before parsing them with the script.

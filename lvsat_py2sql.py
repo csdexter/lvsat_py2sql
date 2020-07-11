@@ -18,6 +18,9 @@ with open(filepath_lv) as fp:                                                   
     cnt = 1
 
     while line_lv:
+
+        line_lv.replace("'","''")                                               # the apostrophe is doubled, for correct PostgreSQL handling
+
         if line_lv[22].strip()=='' : filler="0"                                 # converting single-digit day number to two-digit, by adding a leading 0
         if line_lv[18:21] == "Jan" : f_month="-01-"                             # converting dates to timestamp format accepted by PostgreSQL
         if line_lv[18:21] == "Feb" : f_month="-02-"
@@ -39,8 +42,8 @@ with open(filepath_lv) as fp:                                                   
                 +line_lv[22:23].strip()+filler
                 +line_lv[23:27]+":"+line_lv[27:29]
                 +"','"+line_lv[40:55].strip()                                   # COSPAR
-                +"','"+line_lv[55:86].strip()                                   # postPayload | for launches table, only the first payload is mentioned
-                +"','"+line_lv[86:112].strip()                                  # prePayload  | for the full payload configuration, see satellited table
+                +"','"+line_lv[55:86].strip().replace("'","''")                 # postPayload | for launches table, only the first payload is mentioned
+                +"','"+line_lv[86:112].strip().replace("'","''")                # prePayload  | for the full payload configuration, see satellited table
                 +"','"+line_lv[112:121].strip()                                 # SATCAT
                 +"','"+line_lv[121:144].strip()                                 # LV_type
                 +"','"+line_lv[144:160].strip()                                 # LV_serial
@@ -54,8 +57,8 @@ with open(filepath_lv) as fp:                                                   
 
             print("INSERT INTO satellites VALUES ('"+launchID                   # launchID
                 +"','"+line_lv[40:55].strip()                                   # COSPAR
-                +"','"+line_lv[55:86].strip()                                   # postPayload
-                +"','"+line_lv[86:112].strip()                                  # prePayload
+                +"','"+line_lv[55:86].strip().replace("'","''")                 # postPayload
+                +"','"+line_lv[86:112].strip().replace("'","''")                # prePayload
                 +"','"+sat_array[match][89:102].strip()                         # owner
                 +"','"+line_lv[112:121].strip()                                 # SATCAT
                 +"','"+sat_array[match][166:175].strip()                        # orbitPrd
@@ -63,10 +66,11 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
                 +"');")
         else:
+
             print("INSERT INTO satellites VALUES ('"+launchID                   # launchID
                 +"','"+line_lv[40:55].strip()                                   # COSPAR
-                +"','"+line_lv[55:86].strip()                                   # postPayload
-                +"','"+line_lv[86:112].strip()                                  # prePayload
+                +"','"+line_lv[55:86].strip().replace("'","''")                 # postPayload
+                +"','"+line_lv[86:112].strip().replace("Ven{\\mu}s", "Venmus").replace("'","''")  # prePayload
                 +"','"+sat_array[match][89:102].strip()                         # owner
                 +"','"+line_lv[112:121].strip()                                 # SATCAT
                 +"','"+sat_array[match][166:175].strip()                        # orbitPrd
