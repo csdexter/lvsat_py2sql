@@ -44,8 +44,10 @@ filepath_lv = 'launchlogy.txt'
 filepath_sat = 'satcat.txt'
 filepath_site = 'sites.txt'
 
-if sys.argv[1] == "--reinit":
+if (len(sys.argv) == 2) and (sys.argv[1] == "--reinit"):
     db_reinit()
+
+if len(sys.argv) !=2: pass
 
 with open(filepath_sat) as sat_file:                                            # the content of "satcat.txt" is stored in sat_array[]
     sat_array = sat_file.readlines()
