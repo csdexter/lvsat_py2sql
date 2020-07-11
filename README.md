@@ -2,7 +2,7 @@
 
 Script for parsing historical orbital launch data into SQL statements.
 
-Original data source are the following lists, created and maintained by Jonathan C. McDowell and used here with permission from their author.
+Original data source are the following lists (not redistributed here, get them from their original location to ensure you have the latest version), created and maintained by Jonathan C. McDowell and used here with permission from their author.
 
 - Standard master orbital list (https://planet4589.org/space/log/launchlogy.txt)
 - Master Satellite List (https://www.planet4589.org/space/log/satcat.txt)
@@ -18,7 +18,8 @@ Original data source are the following lists, created and maintained by Jonathan
     112 SATCAT      text      SATCAT number (payload)
     121 LV_type     text      LV type and name
     144 LV_serial   text      LV serial number
-    160 launchSite  text      Launch site (incl. pad)
+    160 launchSite  text      Launch site
+    169 launchPad   text      Launch pad
     193 outcome     text      Outcome
     198 ref         text      Reference
 
@@ -37,10 +38,17 @@ Original data source are the following lists, created and maintained by Jonathan
     165  orbitPrd   text      Orbit period (minutes)
     175  orbitPAI   text      Orbit Perigee x Apogee x Inclination
 
+## sites.txt format
+
+    000 lsSite      text      Launch site code (as in launchlogy.txt)
+    040 lsState     text      Launch site state (country)
+    093 lsName      text      Launch site full name
+
 ## Features
 
  - parsing launchlogy.txt
  - parsing satcat.txt
+ - parsing sites.txt (for country and launchpad sites data)
  - cleaning up the strings for PostgreSQL compliant format
 
 ## TODO
@@ -57,6 +65,8 @@ Original data source are the following lists, created and maintained by Jonathan
 
 In order for this to work, make sure you have both reference files mentioned above in the same folder as this script. A generated and fully usable `launchesdb.sql` file is also provided, but you can generate your own updated version.
 
+The generated database contains two tables, one for launch attempts and another one for satellites.
+
 The script assumes you have Python3 installed and a suited PostgreSQL database already created and configured, as specified below:
 
 	CREATE DATABASE launchesdb;
@@ -71,6 +81,8 @@ The script assumes you have Python3 installed and a suited PostgreSQL database a
 	LV_type TEXT,
 	LV_serial TEXT,
 	launchSite TEXT,
+  launchPad, TEXT,
+  lsState, TEXT,
 	outcome TEXT
 	);
 

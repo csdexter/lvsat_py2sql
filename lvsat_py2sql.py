@@ -3,13 +3,18 @@ import os
 
 filler = ""
 f_month = ""
+lsState = ""
 match = 0
 
 filepath_lv = 'launchlogy.txt'
 filepath_sat = 'satcat.txt'
+filepath_site = 'sites.txt'
 
 with open(filepath_sat) as sat_file:                                            # the content of "satcat.txt" is stored in sat_array[]
     sat_array = sat_file.readlines()
+
+with open(filepath_site, encoding="utf8") as site_file:                         # the content of "sites.txt" is stored in sat_array[]
+    site_array = site_file.readlines()
 
 with open(filepath_lv) as fp:                                                   # "launchlogy.txt" is not stored, it's processed as it's read
     line_lv = fp.readline()
@@ -18,7 +23,6 @@ with open(filepath_lv) as fp:                                                   
     cnt = 1
 
     while line_lv:
-
         if line_lv[22].strip()=='' : filler="0"                                 # converting single-digit day number to two-digit, by adding a leading 0
         if line_lv[18:21] == "Jan" : f_month="-01-"                             # converting dates to timestamp format accepted by PostgreSQL
         if line_lv[18:21] == "Feb" : f_month="-02-"
@@ -33,7 +37,12 @@ with open(filepath_lv) as fp:                                                   
         if line_lv[18:21] == "Nov" : f_month="-11-"
         if line_lv[18:21] == "Dec" : f_month="-12-"
 
-        if line_lv[0:1].strip() != "" :                                         # skipping the lines dealing only with payloads (treated differently)
+        for y in range(len(site_array)):
+            if site_array[y][0:9].strip()==(line_lv[160:169].strip()):
+                lsState = site_array[y][40:49].strip()
+                lsName = site_array[y][93:174].strip()
+
+        if line_lv[0:1].strip() != "" :                                         # skipping the lines dealing only with payloads (treated separately)
             launchID = line_lv[0:10].strip()
             print("INSERT INTO launches VALUES ('"+launchID                     # launchID
                 +"','"+line_lv[13:18].strip()+f_month                           # launchDate
@@ -45,7 +54,9 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+line_lv[112:121].strip()                                 # SATCAT
                 +"','"+line_lv[121:144].strip()                                 # LV_type
                 +"','"+line_lv[144:160].strip()                                 # LV_serial
-                +"','"+line_lv[160:193].strip()                                 # launchSite
+                +"','"+lsName                                                   # launchSite
+                +"','"+line_lv[169:193].strip()                                 # launchPad
+                +"','"+lsState                                                  # lsState
                 +"','"+line_lv[193:194].strip()                                 # outcome
                 +"');")
 
@@ -63,12 +74,13 @@ with open(filepath_lv) as fp:                                                   
                 +"','"+sat_array[match][156:167].strip()                        # orbitClass
                 +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
                 +"');")
+
         else:
 
             print("INSERT INTO satellites VALUES ('"+launchID                   # launchID
                 +"','"+line_lv[40:55].strip()                                   # COSPAR
                 +"','"+line_lv[55:86].strip().replace("'","''")                 # postPayload
-                +"','"+line_lv[86:112].strip().replace("Ven{\\mu}s", "Venmus").replace("'","''")  # prePayload
+                +"','"+line_lv[86:112].strip().replace("Ven{\\mu}s", "Venmus").replace("'","''")  # prePayload, dealing with apostrophes and a LaTeX relic(?)
                 +"','"+sat_array[match][89:102].strip()                         # owner
                 +"','"+line_lv[112:121].strip()                                 # SATCAT
                 +"','"+sat_array[match][166:175].strip()                        # orbitPrd
