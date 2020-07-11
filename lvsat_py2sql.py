@@ -1,6 +1,40 @@
 import sys
 import os
 
+def db_reinit():
+    print("DROP TABLE satellites;")
+    print("DROP TABLE launches;")
+    print("DROP DATABASE launchesdb;")
+
+    print("CREATE DATABASE launchesdb;")
+
+    print("CREATE TABLE launches (")
+    print("launchID TEXT,")
+    print("launchDate TIMESTAMP,")
+    print("COSPAR TEXT,")
+    print("postPayload TEXT,")
+    print("prePayload TEXT,")
+    print("SATCAT TEXT,")
+    print("LV_type TEXT,")
+    print("LV_serial TEXT,")
+    print("launchSite TEXT,")
+    print("launchPad, TEXT,")
+    print("lsState, TEXT,")
+    print("outcome TEXT")
+    print(");")
+
+    print("CREATE TABLE satellites (")
+    print("launchID TEXT,")
+    print("COSPAR TEXT,")
+    print("postPayload TEXT,")
+    print("prePayload TEXT,")
+    print("owner TEXT,")
+    print("SATCAT TEXT,")
+    print("orbitPrd TEXT,")
+    print("orbitClass TEXT,")
+    print("orbitPAI TEXT")
+    print(");")
+
 filler = ""
 f_month = ""
 lsState = ""
@@ -9,6 +43,9 @@ match = 0
 filepath_lv = 'launchlogy.txt'
 filepath_sat = 'satcat.txt'
 filepath_site = 'sites.txt'
+
+if sys.argv[1] == "--reinit":
+    db_reinit()
 
 with open(filepath_sat) as sat_file:                                            # the content of "satcat.txt" is stored in sat_array[]
     sat_array = sat_file.readlines()

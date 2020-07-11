@@ -65,9 +65,17 @@ Original data source are the following lists (not redistributed here, get them f
 
 In order for this to work, make sure you have both reference files mentioned above in the same folder as this script. A generated and fully usable `launchesdb.sql` file is also provided, but you can generate your own updated version.
 
-The generated database contains two tables, one for launch attempts and another one for satellites.
+The script assumes you have Python3 installed and a suited PostgreSQL database already created and configured, as specified below. If not, the script can create the database structure for you, by running:
 
-The script assumes you have Python3 installed and a suited PostgreSQL database already created and configured, as specified below:
+  python lvsat_py2sql.py --reinit >> launchesdb.sql
+
+(useful for updating from more recent source files)
+
+Final step: simply import the created `launchesdb.sql` in PostgreSQL.
+
+### Database structure  
+
+The generated database contains two tables, one for launch attempts and another one for satellites, as seen below:
 
 	CREATE DATABASE launchesdb;
 
