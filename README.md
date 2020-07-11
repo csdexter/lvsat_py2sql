@@ -67,7 +67,7 @@ In order for this to work, make sure you have both reference files mentioned abo
 
 The script assumes you have Python3 installed and a suited PostgreSQL database already created and configured, as specified below. If not, the script can create the database structure for you, by running:
 
-  python lvsat_py2sql.py --reinit >> launchesdb.sql
+	python lvsat_py2sql.py --reinit >> launchesdb.sql
 
 (useful for updating from more recent source files)
 
