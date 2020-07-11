@@ -76,7 +76,7 @@ with open(filepath_lv) as fp:                                                   
         for y in range(len(site_array)):
             if site_array[y][0:9].strip()==(line_lv[160:169].strip()):
                 lsState = site_array[y][40:49].strip()
-                lsName = site_array[y][93:174].strip()
+                lsName = site_array[y][93:174].strip().replace("'","''")
 
         if line_lv[0:1].strip() != "" :                                         # skipping the lines dealing only with payloads (treated separately)
             launchID = line_lv[0:10].strip()
