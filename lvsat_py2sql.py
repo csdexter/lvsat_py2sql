@@ -77,6 +77,6 @@ with open(filepath_lv) as fp:                                                   
                 +"');")
 
         filler = ""
-        f_month=""
+        f_month = ""
         line_lv = fp.readline()
         cnt += 1
