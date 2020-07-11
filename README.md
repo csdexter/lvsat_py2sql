@@ -77,31 +77,31 @@ Final step: simply import the created `launchesdb.sql` in PostgreSQL.
 
 The generated database contains two tables, one for launch attempts and another one for satellites, as seen below:
 
-	CREATE DATABASE launchesdb;
+    CREATE DATABASE launchesdb;
 
-	CREATE TABLE launches (
-	launchID TEXT,
-	launchDate TIMESTAMP,
-	COSPAR TEXT,
-	postPayload TEXT,
-	prePayload TEXT,
-	SATCAT TEXT,
-	LV_type TEXT,
-	LV_serial TEXT,
-	launchSite TEXT,
-  launchPad, TEXT,
-  lsState, TEXT,
-	outcome TEXT
-	);
+    CREATE TABLE launches (
+    launchID TEXT,
+    launchDate TIMESTAMP,
+    COSPAR TEXT,
+    postPayload TEXT,
+    prePayload TEXT,
+    SATCAT TEXT,
+    LV_type TEXT,
+    LV_serial TEXT,
+    launchSite TEXT,
+    launchPad, TEXT,
+    lsState, TEXT,
+    outcome TEXT
+    );
 
-	CREATE TABLE satellites (
-	launchID TEXT,
-	COSPAR TEXT,
-	postPayload TEXT,
-	prePayload TEXT,
-	owner TEXT,
-	SATCAT TEXT,
-	orbitPrd TEXT,
-	orbitClass TEXT,
-	orbitPAI TEXT
-	);
+    CREATE TABLE satellites (
+    launchID TEXT,
+    COSPAR TEXT,
+    postPayload TEXT,
+    prePayload TEXT,
+    owner TEXT,
+    SATCAT TEXT,
+    orbitPrd TEXT,
+    orbitClass TEXT,
+    orbitPAI TEXT
+    );
