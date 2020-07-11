@@ -53,11 +53,10 @@ Original data source are the following lists (not redistributed here, get them f
 
 ## TODO
 
- - choosing more satellite data
- - integrating launch sites/complexes
+ - more satellite data
  - online mode?
- - easier updating?
- - code cleanup and optimization
+ - some updating mechanism?
+ - code clean-up and optimization
 
 ## Usage
 
@@ -69,7 +68,9 @@ The script assumes you have Python3 installed and a suited PostgreSQL database a
 
 	python lvsat_py2sql.py --reinit >> launchesdb.sql
 
-(useful for updating from more recent source files)
+This is useful (and encouraged) for updating from more recent source files.
+
+*WARNING*: running the script with `--reinit` switch will create a file that, when imported into PostgreSQL, will drop your database and tables related to this script, before creating a new database structure and populating it with new data. Make sure you backup your data first, if needed.
 
 Final step: simply import the created `launchesdb.sql` in PostgreSQL.
 
