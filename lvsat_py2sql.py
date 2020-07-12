@@ -133,23 +133,97 @@ def ensure_present(input_name, input_type, fetch_input):
     _LOG.info('Input file "%s" present and readable.', input_name)
 
 
+def parse_date(text_date, start_date):
+    # Some tables use a blank to denote unknown
+    if not text_date:
+        return None
+    # We coerce both '-' and '?' (unknown) and '*' (still in operation) to None
+    if text_date in ('-', '*', '?'):
+        return None
+    # Some records end with various garbage, because screw machine-readable!
+    text_date = text_date.rstrip('?:-')
+    # Some records have only year or month precision
+    date_fields = len(text_date.split(' '))
+    if date_fields == 1:
+        # Some records only have decade precision
+        if text_date.endswith('s'):
+            if start_date:
+                text_date = text_date.rstrip('s')
+            else:
+                text_date = text_date[:-2] + '9'
+        # Missing month and day
+        if start_date:
+            text_date = text_date + ' Jan 1'
+        else:
+            text_date = text_date + ' Dec 31'
+    elif date_fields == 2:
+        # Missing day, unless they tried real hard to screw us up with quarters
+        if text_date[-2] == 'Q':
+            quarter = int(text_date[-1])
+            text_date = text_date[:-2]
+            if start_date:
+                text_date = text_date + {
+                    1: 'Jan', 2: 'Apr', 3: 'Jul', 4: 'Oct'}[quarter]
+            else:
+                text_date = text_date + {
+                    1: 'Mar', 2: 'Jun', 3: 'Set', 4: 'Dec'}[quarter]
+        if start_date:
+            text_date = text_date + ' 1'
+        else:
+            # TODO(rmihailescu): replace this cheat with proper month size
+            text_date = text_date + ' 28'
+    return datetime.strptime(text_date, '%Y %b %d').date()
+
+
+def parse_float(text_float):
+    try:
+        return float(text_float)
+    except ValueError:
+        return float('NaN')
+
+
 def load_satellites(input_name):
     satellites = {}
+    owners = set([])
+    statuses = set([])
+    classes = set([])
+    # We need to parse English month names in the input, so we make sure the
+    # relevant system libraries will expect English input as well.
+    old_locale = locale.setlocale(locale.LC_TIME, 'C')
     # The satellite list has fixed-with fields, the 1970s called and said they
     # want their punch cards back :-(
     with open(input_name, 'rt') as input_file:
         for input_line in input_file:
+            owners.add(input_line[89:102].strip())
+            statuses.add(input_line[114:131].strip())
+            classes.add(input_line[156:165].strip())
             satellites[input_line[0:8].strip()] = {
+                'launchID': None,
+                'COSPAR': input_line[8:23].strip(),
+                'initialName': input_line[23:64].strip(),
+                'finalName': input_line[64:89].strip(),
                 'owner': input_line[89:102].strip(),
-                'orbitPrd': input_line[166:175].strip(),
-                'orbitClass': input_line[156:167].strip(),
-                'orbitPAI': input_line[177:198].strip().replace(' ', '')}
+                'status': input_line[114:131].strip(),
+                'statusDate': parse_date(input_line[131:144].strip(), True),
+                'orbitEpoch': parse_date(input_line[144:156].strip(), True),
+                'orbitClass': input_line[156:165].strip(),
+                'orbitPeriod': parse_float(input_line[165:174].strip()),
+                'orbitPerigee': parse_float(input_line[174:181].strip()),
+                'orbitApogee': parse_float(input_line[183:190].strip()),
+                'orbitInclination': parse_float(input_line[192:198].strip())}
     _LOG.info('Loaded satellite data.')
-    return satellites
+    locale.setlocale(locale.LC_TIME, old_locale)
+    return (owners, statuses, classes, satellites)
 
 
 def load_sites(input_name):
     sites = {}
+    types = set([])
+    countries = set([])
+    operators = set([])
+    # We need to parse English month names in the input, so we make sure the
+    # relevant system libraries will expect English input as well.
+    old_locale = locale.setlocale(locale.LC_TIME, 'C')
     # The site list has TAB-separated fields, the 1990s called and said they
     # want their amber-on-black CRTs back :-( Still way better than fixed-with!
     with open(input_name, newline='') as input_file:
@@ -158,9 +232,24 @@ def load_sites(input_name):
             if input_record[0] == '#Site':
                 # Skip over header line, if present
                 continue
-            sites[input_record[0]] = input_record[4]
+            types.add(input_record[3])
+            countries.add(input_record[4])
+            operators.add(input_record[13])
+            sites[input_record[0]] = {
+                'type': input_record[3],
+                'country': input_record[4],
+                'dateStart': parse_date(input_record[5], True),
+                'dateEnd': parse_date(input_record[6], False),
+                'shortName': input_record[7],
+                'fullName': input_record[8],
+                'locationName': input_record[9],
+                'locationLat': parse_float(input_record[10]),
+                'locationLon': parse_float(input_record[11]),
+                'locationError': float(input_record[12]),
+                'operator': input_record[13]}
+    locale.setlocale(locale.LC_TIME, old_locale)
     _LOG.info('Loaded launch site data.')
-    return sites
+    return (types, countries, operators, sites)
 
 
 def prepend_extra_zero(satcat):
@@ -168,9 +257,6 @@ def prepend_extra_zero(satcat):
 
 
 def parse_datetime(text_date):
-    # Some records have no date at all, because who needs time in space?
-    if not text_date:
-        return datetime(year=1, month=1, day=1, hour=0, minute=0, second=0)
     # Some records end with a question mark, because screw machine-readable!
     text_date = text_date.rstrip('?')
     # Some records have only minute precision, because of course they do!
@@ -179,8 +265,10 @@ def parse_datetime(text_date):
     return datetime.strptime(text_date, '%Y %b %d %H%M:%S')
 
 
-def load_launches(input_name):
+def load_launches(input_name, satellite_data):
     launches = {}
+    types = set([])
+    last_id = ''
     # We need to parse English month names in the input, so we make sure the
     # relevant system libraries will expect English input as well.
     old_locale = locale.setlocale(locale.LC_TIME, 'C')
@@ -190,20 +278,35 @@ def load_launches(input_name):
             if input_line[0] == '#':
                 # Skip over headers, if present
                 continue
-            launches[input_line[0:13].strip()] = {
-                'datetime': parse_datetime(input_line[13:34].strip()),
-                'COSPAR': input_line[40:55].strip(),
-                'postPayload': input_line[55:86].strip(),
-                'prePayload': input_line[86:112].strip(),
-                'SATCAT': prepend_extra_zero(input_line[112:121].strip()),
-                'LV_type': input_line[121:144].strip(),
-                'LV_serial': input_line[144:160].strip(),
-                'launchSite': input_line[160:169].strip(),
-                'launchPad': input_line[169:193].strip(),
-                'outcome': input_line[193:194].strip()}
+            launch_id = input_line[0:13].strip()
+            if launch_id:
+                last_id = launch_id
+                types.add(input_line[121:144].strip())
+                launches[launch_id] = {
+                    'datetime': parse_datetime(input_line[13:34].strip()),
+                    'lvType': input_line[121:144].strip(),
+                    'lvSerial': input_line[144:160].strip(),
+                    'launchSiteID': input_line[160:169].strip(),
+                    'launchPad': input_line[169:193].strip(),
+                    'outcome': {'S': True, 'F': False}[input_line[193]],
+                    'reference': input_line[198:].strip()}
+            satellite_data[prepend_extra_zero(
+                input_line[112:121].strip())]['launchID'] = last_id
     locale.setlocale(locale.LC_TIME, old_locale)
     _LOG.info('Loaded launch data.')
     return launches
+
+
+def to_normal_form(dataset, fields):
+    # Generate indexes first ...
+    indexes = {}
+    for field in fields:
+        indexes[field] = {x: y for y, x in enumerate(fields[field])}
+    # ... then bring the dataset to normal form
+    for key in dataset:
+        for field in fields:
+            dataset[key][field] = indexes[field][dataset[key][field]]
+    return (dataset, indexes)
 
 
 def generate_sql(output, launches, satellites, sites):
@@ -248,12 +351,24 @@ def main(unused_argv):
         os.path.join(arguments.datadir, arguments.orbitalist), _FILE_ORBITAL,
         arguments.download)
 
-    satellites = load_satellites(
-        os.path.join(arguments.datadir, arguments.satellitelist))
-    sites = load_sites(
+    type_index, country_index, operator_index, sites = load_sites(
         os.path.join(arguments.datadir, arguments.sitelist))
-    launches = load_launches(
-        os.path.join(arguments.datadir, arguments.orbitalist))
+    sites, site_indexes = to_normal_form(sites, {
+        'type': type_index,
+        'country': country_index,
+        'operator': operator_index})
+
+    owner_index, status_index, class_index, satellites = load_satellites(
+        os.path.join(arguments.datadir, arguments.satellitelist))
+    satellites, satellite_indexes = to_normal_form(satellites, {
+        'owner': owner_index,
+        'status': status_index,
+        'orbitClass': class_index})
+
+    lvtype_index, launches = load_launches(
+        os.path.join(arguments.datadir, arguments.orbitalist), satellites)
+    launches, launch_indexes = to_normal_form(launches, {
+        'lvType': lvtype_index})
 
     generate_sql(output_file, launches, satellites, sites)
     output_file.close()
