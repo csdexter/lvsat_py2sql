@@ -1,130 +1,263 @@
-import sys
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+"""Import historical orbital launch data into an SQL database.
+
+   Copyright (C) 2020 Claudiu Tănăselia <your email here>.
+
+   Released under the <your licence here>.
+"""
+import argparse
+import csv
+from datetime import datetime
+import locale
+import logging
 import os
+import sys
+from urllib.request import urlretrieve
 
-def db_reinit():
-    print("DROP TABLE satellites;")
-    print("DROP TABLE launches;")
+__author__ = 'Claudiu Tănăselia <your email here>'
 
-    print("CREATE TABLE launches (")
-    print("launchID TEXT,")
-    print("launchDate TIMESTAMP,")
-    print("COSPAR TEXT,")
-    print("postPayload TEXT,")
-    print("prePayload TEXT,")
-    print("SATCAT TEXT,")
-    print("LV_type TEXT,")
-    print("LV_serial TEXT,")
-    print("launchSite TEXT,")
-    print("launchPad TEXT,")
-    print("lsState TEXT,")
-    print("outcome TEXT")
-    print(");")
+_FLAGS = argparse.ArgumentParser(
+    description='Converts orbital launch data to SQL',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+# Python's argparse is light years behind absl.flags so we need to hand-hold it
+# for booleans :-(
+_FLAGS_DOWNLOAD = _FLAGS.add_mutually_exclusive_group(required=False)
+_FLAGS_DOWNLOAD.add_argument(
+    '--download', dest='download',
+    help='Automatically download needed input data from '
+    'https://www.planet4589.org/ if not found in --datadir.',
+    action='store_true')
+_FLAGS_DOWNLOAD.add_argument(
+    '--no-download', dest='download',
+    help='Reverse of --download, fail if any input file is missing.',
+    action='store_false')
+_FLAGS.set_defaults(download=True)
+_FLAGS.add_argument(
+    '-D', '--datadir', default=os.getcwd(),
+    help='Directory from which to read input data files (--orbitalist, '
+    '--satellitelist, --siteslist).')
+_FLAGS.add_argument(
+    '-R', '--orbitalist', default='launchlogy.txt',
+    help='Name of file inside --datadir containing the standard master orbital '
+    'list.')
+_FLAGS.add_argument(
+    '-L', '--satellitelist', default='satcat.txt',
+    help='Name of file inside --datadir containing the master satellite list.')
+_FLAGS.add_argument(
+    '-S', '--sitelist', default='sites.tsv',
+    help='Name of file inside --datadir containing the launch sites list (in '
+    'TSV format).')
+_FLAGS.add_argument(
+    '-O', '--output', default=os.path.join(os.getcwd(), 'lvsat.sql'),
+    help='File name to store SQL output into, will be overwritten if already '
+    'existing. Use "-" to specify stdout.')
+_FLAGS.add_argument(
+    '--adddrop', default=False,
+    help='Prepend DROP/CREATE TABLE statements to the output.',
+    action='store_true')
+_LOG = logging.getLogger(__name__)
 
-    print("CREATE TABLE satellites (")
-    print("launchID TEXT,")
-    print("COSPAR TEXT,")
-    print("postPayload TEXT,")
-    print("prePayload TEXT,")
-    print("owner TEXT,")
-    print("SATCAT TEXT,")
-    print("orbitPrd TEXT,")
-    print("orbitClass TEXT,")
-    print("orbitPAI TEXT")
-    print(");")
+_FILE_ORBITAL = 1
+_FILE_SATELLITE = 2
+_FILE_SITE = 3
+_INPUT_SOURCES = {
+    _FILE_ORBITAL: 'https://www.planet4589.org/space/log/launchlogy.txt',
+    _FILE_SATELLITE: 'https://www.planet4589.org/space/log/satcat.txt',
+    _FILE_SITE: 'https://www.planet4589.org/space/gcat/data/tables/sites.tsv'}
 
-filler = ""
-f_month = ""
-lsState = ""
-match = 0
 
-filepath_lv = 'launchlogy.txt'
-filepath_sat = 'satcat.txt'
-filepath_site = 'sites.txt'
+def add_drop(output):
+    output.write(
+        """DROP TABLE satellites;
+DROP TABLE launches;
+""")
 
-if (len(sys.argv) == 2) and (sys.argv[1] == "--reinit"):
-    db_reinit()
+    output.write(
+        """CREATE TABLE launches (
+launchID TEXT,
+launchDate TIMESTAMP,
+COSPAR TEXT,
+postPayload TEXT,
+prePayload TEXT,
+SATCAT TEXT,
+LV_type TEXT,
+LV_serial TEXT,
+launchSite TEXT,
+launchPad TEXT,
+lsState TEXT,
+outcome TEXT);
+""")
 
-if len(sys.argv) !=2: pass
+    output.write(
+        """CREATE TABLE satellites (
+launchID TEXT,
+COSPAR TEXT,
+postPayload TEXT,
+prePayload TEXT,
+owner TEXT,
+SATCAT TEXT,
+orbitPrd TEXT,
+orbitClass TEXT,
+orbitPAI TEXT);
+""")
 
-with open(filepath_sat) as sat_file:                                            # the content of "satcat.txt" is stored in sat_array[]
-    sat_array = sat_file.readlines()
 
-with open(filepath_site, encoding="utf8") as site_file:                         # the content of "sites.txt" is stored in sat_array[]
-    site_array = site_file.readlines()
-
-with open(filepath_lv) as fp:                                                   # "launchlogy.txt" is not stored, it's processed as it's read
-    line_lv = fp.readline()
-    line_lv = fp.readline()
-    line_lv = fp.readline()                                                     # dirty way of starting to read the file from its third line
-    cnt = 1
-
-    while line_lv:
-        if line_lv[22].strip()=='' : filler="0"                                 # converting single-digit day number to two-digit, by adding a leading 0
-        if line_lv[18:21] == "Jan" : f_month="-01-"                             # converting dates to timestamp format accepted by PostgreSQL
-        if line_lv[18:21] == "Feb" : f_month="-02-"
-        if line_lv[18:21] == "Mar" : f_month="-03-"
-        if line_lv[18:21] == "Apr" : f_month="-04-"
-        if line_lv[18:21] == "May" : f_month="-05-"
-        if line_lv[18:21] == "Jun" : f_month="-06-"
-        if line_lv[18:21] == "Jul" : f_month="-07-"
-        if line_lv[18:21] == "Aug" : f_month="-08-"
-        if line_lv[18:21] == "Sep" : f_month="-09-"
-        if line_lv[18:21] == "Oct" : f_month="-10-"
-        if line_lv[18:21] == "Nov" : f_month="-11-"
-        if line_lv[18:21] == "Dec" : f_month="-12-"
-
-        for y in range(len(site_array)):
-            if site_array[y][0:9].strip()==(line_lv[160:169].strip()):
-                lsState = site_array[y][40:49].strip()
-                lsName = site_array[y][0:9].strip()
-
-        if line_lv[0:1].strip() != "" :                                         # skipping the lines dealing only with payloads (treated separately)
-            launchID = line_lv[0:10].strip()
-            print("INSERT INTO launches VALUES ('"+launchID                     # launchID
-                +"','"+line_lv[13:18].strip()+f_month                           # launchDate
-                +line_lv[22:23].strip()+filler
-                +line_lv[23:27]+":"+line_lv[27:29]
-                +"','"+line_lv[40:55].strip()                                   # COSPAR
-                +"','"+line_lv[55:86].strip().replace("'","''")                 # postPayload | for launches table, only the first payload is mentioned
-                +"','"+line_lv[86:112].strip().replace("'","''")                # prePayload  | for the full payload configuration, see satellited table
-                +"','"+line_lv[112:121].strip()                                 # SATCAT
-                +"','"+line_lv[121:144].strip()                                 # LV_type
-                +"','"+line_lv[144:160].strip()                                 # LV_serial
-                +"','"+lsName                                                   # launchSite
-                +"','"+line_lv[169:193].strip()                                 # launchPad
-                +"','"+lsState                                                  # lsState
-                +"','"+line_lv[193:194].strip()                                 # outcome
-                +"');")
-
-            for x in range(len(sat_array)):                         	        # looking for a match in satcat.txt
-                if sat_array[x][0:8].strip()==("S0"+line_lv[113:120].strip()):  # SATCAT have an extra 0 digit in satcat.txt
-                    match = x
-
-            print("INSERT INTO satellites VALUES ('"+launchID                   # launchID
-                +"','"+line_lv[40:55].strip()                                   # COSPAR
-                +"','"+line_lv[55:86].strip().replace("'","''")                 # postPayload
-                +"','"+line_lv[86:112].strip().replace("'","''")                # prePayload
-                +"','"+sat_array[match][89:102].strip()                         # owner
-                +"','"+line_lv[112:121].strip()                                 # SATCAT
-                +"','"+sat_array[match][166:175].strip()                        # orbitPrd
-                +"','"+sat_array[match][156:167].strip()                        # orbitClass
-                +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
-                +"');")
-
+def ensure_present(input_name, input_type, fetch_input):
+    if os.path.isdir(input_name):
+        _LOG.fatal(
+            'Input file "%s" appears to be a directory, cannot continue!',
+            input_name)
+    if not os.path.exists(input_name):
+        if not fetch_input:
+            _LOG.fatal(
+                'Input file "%s" does not exist and --download was not given, '
+                'cannot continue!', input_name)
         else:
+            if not os.path.isdir(os.path.dirname(input_name)):
+                _LOG.fatal(
+                    'Directory "%s" for missing input file "%s" does not '
+                    'exist, cannot download there!',
+                    os.path.dirname(input_name), input_name)
+            if not os.access(os.path.dirname(input_name), os.W_OK):
+                _LOG.fatal(
+                    'Directory "%s" for missing input file "%s" is not '
+                    'writable, cannot download there!',
+                    os.path.dirname(input_name), input_name)
+            _ = urlretrieve(_INPUT_SOURCES[input_type], input_name)
+    else:
+        if not os.access(input_name, os.R_OK):
+            _LOG.fatal(
+                'Input file "%s" exists but is not readable, cannot continue! ',
+                input_name)
+    _LOG.info('Input file "%s" present and readable.', input_name)
 
-            print("INSERT INTO satellites VALUES ('"+launchID                   # launchID
-                +"','"+line_lv[40:55].strip()                                   # COSPAR
-                +"','"+line_lv[55:86].strip().replace("'","''")                 # postPayload
-                +"','"+line_lv[86:112].strip().replace("Ven{\\mu}s", "Venmus").replace("'","''")  # prePayload, dealing with apostrophes and a LaTeX relic(?)
-                +"','"+sat_array[match][89:102].strip()                         # owner
-                +"','"+line_lv[112:121].strip()                                 # SATCAT
-                +"','"+sat_array[match][166:175].strip()                        # orbitPrd
-                +"','"+sat_array[match][156:167].strip()                        # orbitClass
-                +"','"+sat_array[match][177:198].replace(" ", "")               # orbitPAI
-                +"');")
 
-        filler = ""
-        f_month = ""
-        line_lv = fp.readline()
-        cnt += 1
+def load_satellites(input_name):
+    satellites = {}
+    # The satellite list has fixed-with fields, the 1970s called and said they
+    # want their punch cards back :-(
+    with open(input_name, 'rt') as input_file:
+        for input_line in input_file:
+            satellites[input_line[0:8].strip()] = {
+                'owner': input_line[89:102].strip(),
+                'orbitPrd': input_line[166:175].strip(),
+                'orbitClass': input_line[156:167].strip(),
+                'orbitPAI': input_line[177:198].strip().replace(' ', '')}
+    _LOG.info('Loaded satellite data.')
+    return satellites
+
+
+def load_sites(input_name):
+    sites = {}
+    # The site list has TAB-separated fields, the 1990s called and said they
+    # want their amber-on-black CRTs back :-( Still way better than fixed-with!
+    with open(input_name, newline='') as input_file:
+        tsv_data = csv.reader(input_file, delimiter='\t')
+        for input_record in tsv_data:
+            if input_record[0] == '#Site':
+                # Skip over header line, if present
+                continue
+            sites[input_record[0]] = input_record[4]
+    _LOG.info('Loaded launch site data.')
+    return sites
+
+
+def prepend_extra_zero(satcat):
+    return satcat[0] + '0' + satcat[1:]
+
+
+def parse_datetime(text_date):
+    # Some records have no date at all, because who needs time in space?
+    if not text_date:
+        return datetime(year=1, month=1, day=1, hour=0, minute=0, second=0)
+    # Some records end with a question mark, because screw machine-readable!
+    text_date = text_date.rstrip('?')
+    # Some records have only minute precision, because of course they do!
+    if text_date[-3] != ':':
+        text_date = text_date + ':00'
+    return datetime.strptime(text_date, '%Y %b %d %H%M:%S')
+
+
+def load_launches(input_name):
+    launches = {}
+    # We need to parse English month names in the input, so we make sure the
+    # relevant system libraries will expect English input as well.
+    old_locale = locale.setlocale(locale.LC_TIME, 'C')
+    # Back to fixed-width, oh boy :-(
+    with open(input_name, 'rt') as input_file:
+        for input_line in input_file:
+            if input_line[0] == '#':
+                # Skip over headers, if present
+                continue
+            launches[input_line[0:13].strip()] = {
+                'datetime': parse_datetime(input_line[13:34].strip()),
+                'COSPAR': input_line[40:55].strip(),
+                'postPayload': input_line[55:86].strip(),
+                'prePayload': input_line[86:112].strip(),
+                'SATCAT': prepend_extra_zero(input_line[112:121].strip()),
+                'LV_type': input_line[121:144].strip(),
+                'LV_serial': input_line[144:160].strip(),
+                'launchSite': input_line[160:169].strip(),
+                'launchPad': input_line[169:193].strip(),
+                'outcome': input_line[193:194].strip()}
+    locale.setlocale(locale.LC_TIME, old_locale)
+    _LOG.info('Loaded launch data.')
+    return launches
+
+
+def generate_sql(output, launches, satellites, sites):
+    for launch in launches:
+        output.write(
+            """INSERT INTO launches VALUES (
+'%(id)s', '%(datetime)s', '%(COSPAR)s', '%(postPayload)s', '%(prePayload)s',
+'%(SATCAT)s', '%(LV_type)s', '%(LV_serial)s', '%(launchSite)s', '%(launchPad)s',
+'%(sitelocation)s', '%(outcome)s');
+""" % {
+    'id': launch,
+    'datetime': launches[launch]['datetime'].isoformat(),
+    'COSPAR': launches[launch]['COSPAR'],
+    'postPayload': launches[launch]['postPayload'],
+    'prePayload': launches[launch]['prePayload'],
+    'SATCAT': launches[launch]['SATCAT'],
+    'LV_type': launches[launch]['LV_type'],
+    'LV_serial': launches[launch]['LV_serial'],
+    'launchSite': launches[launch]['launchSite'],
+    'launchPad': launches[launch]['launchPad'],
+    'sitelocation': sites[launches[launch]['launchSite']],
+    'outcome': launches[launch]['outcome']})
+
+
+def main(unused_argv):
+    arguments = _FLAGS.parse_args()
+
+    if arguments.output == '-':
+        output_file = sys.stdout
+    else:
+        output_file = open(arguments.output, 'wt')
+    if arguments.adddrop:
+        add_drop(output_file)
+
+    ensure_present(
+        os.path.join(arguments.datadir, arguments.satellitelist),
+        _FILE_SATELLITE, arguments.download)
+    ensure_present(
+        os.path.join(arguments.datadir, arguments.sitelist), _FILE_SITE,
+        arguments.download)
+    ensure_present(
+        os.path.join(arguments.datadir, arguments.orbitalist), _FILE_ORBITAL,
+        arguments.download)
+
+    satellites = load_satellites(
+        os.path.join(arguments.datadir, arguments.satellitelist))
+    sites = load_sites(
+        os.path.join(arguments.datadir, arguments.sitelist))
+    launches = load_launches(
+        os.path.join(arguments.datadir, arguments.orbitalist))
+
+    generate_sql(output_file, launches, satellites, sites)
+    output_file.close()
+
+
+if __name__ == '__main__':
+    main(sys.argv)
