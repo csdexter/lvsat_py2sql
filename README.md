@@ -5,10 +5,12 @@ Script for parsing historical orbital launch data into SQL statements.
 Original data source are the following lists (not redistributed here, get them from their original location to ensure you have the latest version), created and maintained by Jonathan C. McDowell and used here with permission from their author.
 
 - Standard master orbital list (https://planet4589.org/space/log/launchlogy.txt)
+- Full master orbital list (https://planet4589.org/space/log/launchlog.txt)
 - Master Satellite List (https://www.planet4589.org/space/log/satcat.txt)
 - Launch Sites Database (https://planet4589.org/space/gcat/data/tables/sites.html)
+- Organizations Database (https://planet4589.org/space/gcat/data/tables/orgs.html)
 
-## launchlogy.txt format
+## launchlog.txt format
 
     000 launchID    TEXT      Launch (international designation)
     013 launchDate  TIMESTAMP Launch Date (UTC)
