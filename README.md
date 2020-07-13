@@ -12,39 +12,39 @@ Original data source are the following lists (not redistributed here, get them f
 
 ## launchlog.txt format
 
-    000 launchID    TEXT      Launch (international designation)
-    013 launchDate  TIMESTAMP Launch Date (UTC)
-    034 COSPAR      TEXT      COSPAR designation (payload)
-    055 postPayload TEXT      Payload name (after launch)
-    086 prePayload  TEXT      Payload name (before launch)
-    112 SATCAT      TEXT      SATCAT number (payload)
-    121 LV_type     TEXT      LV type and name
-    144 LV_serial   TEXT      LV serial number
-    160 launchSite  TEXT      Launch site
-    169 launchPad   TEXT      Launch pad
-    193 outcome     TEXT      Outcome
-    198 ref         TEXT      Reference
+    000 lv_launchID      TEXT      Launch (international designation)
+    013 lv_launchDate    TIMESTAMP Launch Date (UTC)
+    034 lv_COSPAR        TEXT      COSPAR designation (payload)
+    055 lv_postPayload   TEXT      Payload name (after launch)
+    086 lv_prePayload    TEXT      Payload name (before launch)
+    112 lv_SATCAT        TEXT      SATCAT number (payload)
+    121 lv_type          TEXT      LV type and name
+    144 lv_serial        TEXT      LV serial number
+    160 lv_launchSite    TEXT      Launch site
+    169 lv_launchPad     TEXT      Launch pad
+    193 lv_outcome       TEXT      Outcome
+    198 lv_ref           TEXT      Reference
 
 ## satcat.txt format
 
-    000  SATCAT     TEXT      SATCAT number
-    008  COSPAR     TEXT      COSPAR designation
-    023  satName    TEXT      Official name
-    064  secName    TEXT      Secondary name or prelaunch name.
-    089  owner      TEXT      Owner/Operator
-    102  launchDate TIMESTAMP Launch Date (UTC)
-    114  currStatus TEXT      Current Status
-    132  dateStatus TIMESTAMP Date of Status
-    144  orbitEpoch TIMESTAMP Date of orbit epoch
-    156  orbitClass TEXT      Orbital class
-    165  orbitPrd   TEXT      Orbit period (minutes)
-    175  orbitPAI   TEXT      Orbit Perigee x Apogee x Inclination
+    000 sat_SATCAT       TEXT      SATCAT number
+    008 sat_COSPAR       TEXT      COSPAR designation
+    023 sat_postPayload  TEXT      Official name
+    064 sat_prePayload   TEXT      Secondary name or prelaunch name.
+    089 sat_owner        TEXT      Owner/Operator
+    102 sat_launchDate   TIMESTAMP Launch Date (UTC)
+    114 sat_currStatus   TEXT      Current Status
+    132 sat_dateStatus   TIMESTAMP Date of Status
+    144 sat_orbitEpoch   TIMESTAMP Date of orbit epoch
+    156 sat_orbitClass   TEXT      Orbital class
+    165 sat_orbitPrd     TEXT      Orbit period (minutes)
+    175 sat_orbitPAI     TEXT      Orbit Perigee x Apogee x Inclination
 
 ## sites.txt format
 
-    000 lsSite      TEXT      Launch site code (as in launchlogy.txt)
-    040 lsState     TEXT      Launch site state (country)
-    093 lsName      TEXT      Launch site full name
+    000 ls_site          TEXT      Launch site code (as in launchlogy.txt)
+    040 ls_state         TEXT      Launch site state (country)
+    093 ls_name          TEXT      Launch site full name
 
 ## Features
 
@@ -83,28 +83,28 @@ The generated database contains two tables, one for launch attempts and another 
     CREATE DATABASE launchesdb;
 
     CREATE TABLE launches (
-    launchID TEXT,
-    launchDate TIMESTAMP,
-    COSPAR TEXT,
-    postPayload TEXT,
-    prePayload TEXT,
-    SATCAT TEXT,
-    LV_type TEXT,
-    LV_serial TEXT,
-    launchSite TEXT,
-    launchPad, TEXT,
-    lsState, TEXT,
-    outcome TEXT
+    lv_launchID TEXT,
+    lv_launchDate TIMESTAMP,
+    lv_COSPAR TEXT,
+    lv_postPayload TEXT,
+    lv_prePayload TEXT,
+    lv_SATCAT TEXT,
+    lv_type TEXT,
+    lv_serial TEXT,
+    ls_name TEXT,
+    lv_launchPad, TEXT,
+    ls_state, TEXT,
+    lv_outcome TEXT
     );
 
     CREATE TABLE satellites (
-    launchID TEXT,
-    COSPAR TEXT,
-    postPayload TEXT,
-    prePayload TEXT,
-    owner TEXT,
-    SATCAT TEXT,
-    orbitPrd TEXT,
-    orbitClass TEXT,
-    orbitPAI TEXT
+    sat_launchID TEXT,
+    sat_COSPAR TEXT,
+    sat_postPayload TEXT,
+    sat_prePayload TEXT,
+    sat_owner TEXT,
+    sat_SATCAT TEXT,
+    sat_orbitPrd TEXT,
+    sat_orbitClass TEXT,
+    sat_orbitPAI TEXT
     );
