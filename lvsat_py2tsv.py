@@ -20,9 +20,34 @@ filepath_lv = 'launchlog.txt'
 filepath_sat = 'satcat.txt'
 filepath_site = 'sites.txt'
 output = 'output.txt'
+output_sql = 'output.sql'
 
 with open(output, 'w') as f:
     f.write("")
+
+with open(output_sql, 'w') as g:
+    g.write("")
+
+with open(output_sql, 'w') as g:
+
+    g.write("DROP TABLE launches;\n")
+
+    g.write("CREATE TABLE launches (\n")
+    g.write("launchID TEXT,\n")
+    g.write("launchDate TIMESTAMP,\n")
+    g.write("lv_type TEXT,\n")
+    g.write("lv_serial TEXT,\n")
+    g.write("sat_owner TEXT,\n")
+    g.write("lv_prePayload TEXT,\n")
+    g.write("lv_postPayload TEXT,\n")
+    g.write("sat_currStatus TEXT,\n")
+    g.write("sat_dateStatus TEXT,\n")
+    g.write("sat_orbitClass TEXT,\n")
+    g.write("ls_state TEXT,\n")
+    g.write("lv_name TEXT,\n")
+    g.write("lv_launchPad TEXT,\n")
+    g.write("lv_outcome TEXT\n")
+    g.write(");\n")
 
 # the content of "satcat.txt" is stored in sat_array[]
 with open(filepath_sat) as sat_file:
@@ -75,12 +100,11 @@ with open(filepath_lv) as fp:
             lv_launchDate = line_lv[13:18].strip()+f_month+line_lv[22:23].strip()+filler+line_lv[23:27]+":"+line_lv[27:29]
 
             # dealing with incomplete date records
-            if line_lv[27:29].strip() == "" : lv_launchDate = line_lv[13:18].strip()+f_month+line_lv[22:24].strip()+filler+line_lv[23:27]
-            if line_lv[25:27].strip() == "" : lv_launchDate = line_lv[13:18].strip()+f_month+line_lv[22:24].strip()+filler
+            if line_lv[25:27].strip() == "" : lv_launchDate = line_lv[13:18].strip()+f_month+line_lv[22:23].strip()+filler+line_lv[23:27]
 
             lv_COSPAR = line_lv[40:55].strip()
-            lv_postPayload = line_lv[55:86].strip()
-            lv_prePayload = line_lv[86:112].strip()
+            lv_postPayload = line_lv[55:86].strip().replace("Ven{\\mu}s", "Venmus")
+            lv_prePayload = line_lv[86:112].strip().replace("Ven{\\mu}s", "Venmus")
             lv_SATCAT = line_lv[112:121].strip()
             lv_type = line_lv[121:144].strip()
 
@@ -92,7 +116,7 @@ with open(filepath_lv) as fp:
 
             lv_serial = line_lv[144:160].strip()
             lv_name = line_lv[160:169].strip()
-            if lv_name == "NIIP-5": lv_name = "Baikonur"
+            if lv_name == "NIIP-5":  lv_name = "Baikonur"
             if lv_name == "NIIP-53": lv_name = "Plesetsk"
             if lv_name == "V": lv_name = "VAFB"
 
@@ -153,7 +177,8 @@ with open(filepath_lv) as fp:
             # exporting collected data
             with open(output, 'a') as f:
                 f.write(lv_launchID.ljust(12) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + sat_owner.ljust(14) + lv_prePayload.ljust(30) + lv_postPayload.ljust(30)+ sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(25) + lv_outcome.ljust(2) + "\n")
-
+            with open(output_sql, 'a') as g:
+                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ sat_owner +"','"+ lv_prePayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
         # skipping lines with payload data only
         else: pass
 
