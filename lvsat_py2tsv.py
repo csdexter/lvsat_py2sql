@@ -8,8 +8,11 @@ import time
 tic = time.perf_counter()
 
 
-filler = ""
+filler  = ""
+filler2 = ""
 f_month = ""
+g_month = ""
+date_partial = ""
 ls_state = ""
 match = 0
 
@@ -63,6 +66,7 @@ with open(filepath_lv) as fp:
 
                 # prettifying record for Japan
                 if ls_state == "J" : ls_state = "JP"
+                if ls_state == "GUF": ls_state = "GF"
 
         # skipping the lines dealing only with payloads (we're interested in launches, not satellites)
         # and processing launchlog.txt
@@ -87,7 +91,11 @@ with open(filepath_lv) as fp:
             if lv_type == "Falcon 9"  : lv_type = "Falcon-9"
 
             lv_serial = line_lv[144:160].strip()
-            ls_name = line_lv[160:169].strip()
+            lv_name = line_lv[160:169].strip()
+            if lv_name == "NIIP-5": lv_name = "Baikonur"
+            if lv_name == "NIIP-53": lv_name = "Plesetsk"
+            if lv_name == "V": lv_name = "VAFB"
+
             lv_launchPad = line_lv[169:193].strip()
             lv_outcome = line_lv[193:194].strip()
 
@@ -100,13 +108,51 @@ with open(filepath_lv) as fp:
 
             sat_owner = sat_array[match][89:102].strip()
             sat_orbitClass = sat_array[match][156:165].strip()
+            sat_currStatus = sat_array[match][114:131].strip()
+
+            # Treating each case independently, to code them and thus clear the table a bit
+            if sat_currStatus == "Reentered": sat_currStatus = "REE"
+            if sat_currStatus == "Reentered Att": sat_currStatus = "REA"
+            if sat_currStatus == "In Earth orbit": sat_currStatus = "IEO"
+            if sat_currStatus == "Deep Space": sat_currStatus = "DSO"
+            if sat_currStatus == "Beyond Earth orb": sat_currStatus = "BEO"
+            if sat_currStatus == "Lost": sat_currStatus = "LST"
+            if sat_currStatus == "Landed": sat_currStatus = "LAN"
+            if sat_currStatus == "Deorbited": sat_currStatus = "DOR"
+            if sat_currStatus == "Deep Space Att": sat_currStatus = "DSA"
+            if sat_currStatus == "Exploded": sat_currStatus = "EXP"
+
+            # converting date for sat_dateStatus variable to a format compliant with PostgreSQL
+            if len(sat_array[match]) < 140 : sat_dateStatus = ""
+            else:
+                date_partial = sat_array[match][140:142]
+                if sat_array[match][140].strip()=='' :
+                    date_partial = "0"+sat_array[match][141]
+                g_month = ""
+                if sat_array[match][131:141].strip() != "" :
+                    if sat_array[match][149:152] == "Jan" : g_month="-01-"
+                    if sat_array[match][149:152] == "Feb" : g_month="-02-"
+                    if sat_array[match][149:152] == "Mar" : g_month="-03-"
+                    if sat_array[match][149:152] == "Apr" : g_month="-04-"
+                    if sat_array[match][149:152] == "May" : g_month="-05-"
+                    if sat_array[match][149:152] == "Jun" : g_month="-06-"
+                    if sat_array[match][149:152] == "Jul" : g_month="-07-"
+                    if sat_array[match][149:152] == "Aug" : g_month="-08-"
+                    if sat_array[match][149:152] == "Sep" : g_month="-09-"
+                    if sat_array[match][149:152] == "Oct" : g_month="-10-"
+                    if sat_array[match][149:152] == "Nov" : g_month="-11-"
+                    if sat_array[match][149:152] == "Dec" : g_month="-12-"
+                if g_month == "" :
+                    sat_dateStatus = ""
+                else:
+                    sat_dateStatus = sat_array[match][131:135].strip()+g_month+date_partial
 
             # just for debugging purposes
             sys.stdout.write("processing year: "+lv_launchDate[0:4]+"; entry: "+str(cnt)+"\r")
 
             # exporting collected data
             with open(output, 'a') as f:
-                f.write(lv_launchID.ljust(12) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_prePayload.ljust(30) + lv_postPayload.ljust(30) + sat_owner.ljust(14) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + ls_name.ljust(9) + lv_launchPad.ljust(25) + lv_outcome.ljust(2) + "\n")
+                f.write(lv_launchID.ljust(12) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + sat_owner.ljust(14) + lv_prePayload.ljust(30) + lv_postPayload.ljust(30)+ sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(25) + lv_outcome.ljust(2) + "\n")
 
         # skipping lines with payload data only
         else: pass
