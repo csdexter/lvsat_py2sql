@@ -8,12 +8,14 @@
 """
 import argparse
 import csv
-from datetime import datetime
+from datetime import datetime, date
 import locale
 import logging
 import os
 import sys
 from urllib.request import urlretrieve
+
+from six import iteritems
 
 __author__ = 'Claudiu Tănăselia <your email here>'
 
@@ -69,38 +71,132 @@ _INPUT_SOURCES = {
 
 def add_drop(output):
     output.write(
-        """DROP TABLE satellites;
-DROP TABLE launches;
-""")
+        """DROP TABLE IF EXISTS `data_Launch`;
+CREATE TABLE `data_Launch` (
+  `id` varchar(16) NOT NULL,
+  `datetime` datetime NOT NULL,
+  `launchVehicleTypeID` bigint(20) unsigned NOT NULL,
+  `launchVehicleSerial` varchar(16) NOT NULL,
+  `siteID` varchar(8) NOT NULL,
+  `launchPad` varchar(24) NOT NULL,
+  `outcome` tinyint(1) NOT NULL,
+  `reference` varchar(24) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='List of known orbital launches';
 
-    output.write(
-        """CREATE TABLE launches (
-launchID TEXT,
-launchDate TIMESTAMP,
-COSPAR TEXT,
-postPayload TEXT,
-prePayload TEXT,
-SATCAT TEXT,
-LV_type TEXT,
-LV_serial TEXT,
-launchSite TEXT,
-launchPad TEXT,
-lsState TEXT,
-outcome TEXT);
-""")
+DROP TABLE IF EXISTS `data_Satellite`;
+CREATE TABLE `data_Satellite` (
+  `id` char(8) NOT NULL,
+  `launchID` varchar(16) NOT NULL,
+  `cospar` varchar(16) NOT NULL,
+  `initialName` varchar(48) NOT NULL,
+  `finalName` varchar(32) NOT NULL,
+  `ownerID` bigint(20) unsigned NOT NULL,
+  `statusID` bigint(20) unsigned NOT NULL,
+  `statusDate` date DEFAULT NULL,
+  `orbitEpoch` date DEFAULT NULL,
+  `orbitClassID` bigint(20) unsigned NOT NULL,
+  `orbitPeriod` float NOT NULL,
+  `orbitPerigee` float NOT NULL,
+  `orbitApogee` float NOT NULL,
+  `orbitInclination` float NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8
+COMMENT='List of known satellites around Earth';
 
-    output.write(
-        """CREATE TABLE satellites (
-launchID TEXT,
-COSPAR TEXT,
-postPayload TEXT,
-prePayload TEXT,
-owner TEXT,
-SATCAT TEXT,
-orbitPrd TEXT,
-orbitClass TEXT,
-orbitPAI TEXT);
-""")
+DROP TABLE IF EXISTS `index_LaunchVehicleType`;
+CREATE TABLE `index_LaunchVehicleType` (
+  `id` bigint(20) unsigned NOT NULL,
+  `launchVehicleType` varchar(24) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8
+COMMENT='Index of satellite launch vehicle types';
+
+DROP TABLE IF EXISTS `index_SatelliteOrbitClass`;
+CREATE TABLE `index_SatelliteOrbitClass` (
+  `id` bigint(20) unsigned NOT NULL,
+  `satelliteOrbitClass` varchar(8) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8
+COMMENT='Index of satellite orbit classes';
+
+DROP TABLE IF EXISTS `index_SatelliteOwner`;
+CREATE TABLE `index_SatelliteOwner` (
+  `id` bigint(20) unsigned NOT NULL,
+  `satelliteOwnerCode` varchar(16) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of satellite owners';
+
+DROP TABLE IF EXISTS `index_SatelliteStatus`;
+CREATE TABLE `index_SatelliteStatus` (
+  `id` bigint(20) unsigned NOT NULL,
+  `satelliteStatus` varchar(24) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of satellite statuses';
+
+DROP TABLE IF EXISTS `index_Site`;
+CREATE TABLE `index_Site` (
+  `id` varchar(8) NOT NULL,
+  `typeID` bigint(20) unsigned NOT NULL,
+  `countryID` bigint(20) unsigned NOT NULL,
+  `dateStart` date DEFAULT NULL,
+  `dateEnd` date DEFAULT NULL,
+  `shortName` varchar(16) NOT NULL,
+  `fullName` varchar(128) NOT NULL,
+  `locationName` varchar(64) NOT NULL,
+  `locationLat` float NOT NULL,
+  `locationLon` float NOT NULL,
+  `locationError` float NOT NULL,
+  `operatorID` bigint(20) unsigned NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch sites';
+
+DROP TABLE IF EXISTS `index_SiteCountry`;
+CREATE TABLE `index_SiteCountry` (
+  `id` bigint(20) unsigned NOT NULL,
+  `siteCountryCode` varchar(8) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch site countries';
+
+DROP TABLE IF EXISTS `index_SiteOperator`;
+CREATE TABLE `index_SiteOperator` (
+  `id` bigint(20) unsigned NOT NULL,
+  `siteOperatorCode` varchar(16) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch site operators';
+
+DROP TABLE IF EXISTS `index_SiteType`;
+CREATE TABLE `index_SiteType` (
+  `id` bigint(20) unsigned NOT NULL,
+  `siteType` char(2) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch site types';
+
+ALTER TABLE `data_Launch`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `data_Satellite`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_LaunchVehicleType`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_SatelliteOrbitClass`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_SatelliteOwner`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_SatelliteStatus`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_Site`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_SiteCountry`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_SiteOperator`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `index_SiteType`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `index_LaunchVehicleType`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
+ALTER TABLE `index_SatelliteOrbitClass`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
+ALTER TABLE `index_SatelliteOwner`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
+ALTER TABLE `index_SatelliteStatus`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
+ALTER TABLE `index_SiteCountry`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
+ALTER TABLE `index_SiteOperator`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
+ALTER TABLE `index_SiteType`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;""")
 
 
 def ensure_present(input_name, input_type, fetch_input):
@@ -124,13 +220,16 @@ def ensure_present(input_name, input_type, fetch_input):
                     'Directory "%s" for missing input file "%s" is not '
                     'writable, cannot download there!',
                     os.path.dirname(input_name), input_name)
+            _LOG.warning(
+                'Input file "%s" missing, downloading from "%s"!',
+                input_name, _INPUT_SOURCES[input_type])
             _ = urlretrieve(_INPUT_SOURCES[input_type], input_name)
     else:
         if not os.access(input_name, os.R_OK):
             _LOG.fatal(
                 'Input file "%s" exists but is not readable, cannot continue! ',
                 input_name)
-    _LOG.info('Input file "%s" present and readable.', input_name)
+    _LOG.info('Input file "%s" (now) present and readable.', input_name)
 
 
 def parse_date(text_date, start_date):
@@ -199,14 +298,14 @@ def load_satellites(input_name):
             classes.add(input_line[156:165].strip())
             satellites[input_line[0:8].strip()] = {
                 'launchID': None,
-                'COSPAR': input_line[8:23].strip(),
+                'cospar': input_line[8:23].strip(),
                 'initialName': input_line[23:64].strip(),
                 'finalName': input_line[64:89].strip(),
-                'owner': input_line[89:102].strip(),
-                'status': input_line[114:131].strip(),
+                'ownerID': input_line[89:102].strip(),
+                'statusID': input_line[114:131].strip(),
                 'statusDate': parse_date(input_line[131:144].strip(), True),
                 'orbitEpoch': parse_date(input_line[144:156].strip(), True),
-                'orbitClass': input_line[156:165].strip(),
+                'orbitClassID': input_line[156:165].strip(),
                 'orbitPeriod': parse_float(input_line[165:174].strip()),
                 'orbitPerigee': parse_float(input_line[174:181].strip()),
                 'orbitApogee': parse_float(input_line[183:190].strip()),
@@ -236,8 +335,8 @@ def load_sites(input_name):
             countries.add(input_record[4])
             operators.add(input_record[13])
             sites[input_record[0]] = {
-                'type': input_record[3],
-                'country': input_record[4],
+                'typeID': input_record[3],
+                'countryID': input_record[4],
                 'dateStart': parse_date(input_record[5], True),
                 'dateEnd': parse_date(input_record[6], False),
                 'shortName': input_record[7],
@@ -246,7 +345,7 @@ def load_sites(input_name):
                 'locationLat': parse_float(input_record[10]),
                 'locationLon': parse_float(input_record[11]),
                 'locationError': float(input_record[12]),
-                'operator': input_record[13]}
+                'operatorID': input_record[13]}
     locale.setlocale(locale.LC_TIME, old_locale)
     _LOG.info('Loaded launch site data.')
     return (types, countries, operators, sites)
@@ -284,17 +383,18 @@ def load_launches(input_name, satellite_data):
                 types.add(input_line[121:144].strip())
                 launches[launch_id] = {
                     'datetime': parse_datetime(input_line[13:34].strip()),
-                    'lvType': input_line[121:144].strip(),
-                    'lvSerial': input_line[144:160].strip(),
-                    'launchSiteID': input_line[160:169].strip(),
+                    'launchVehicleTypeID': input_line[121:144].strip(),
+                    'launchVehicleSerial': input_line[144:160].strip(),
+                    'siteID': input_line[160:169].strip(),
                     'launchPad': input_line[169:193].strip(),
                     'outcome': {'S': True, 'F': False}[input_line[193]],
                     'reference': input_line[198:].strip()}
-            satellite_data[prepend_extra_zero(
-                input_line[112:121].strip())]['launchID'] = last_id
+            satellite_id = prepend_extra_zero(input_line[112:121].strip())
+            if satellite_id in satellite_data:
+                satellite_data[satellite_id]['launchID'] = last_id
     locale.setlocale(locale.LC_TIME, old_locale)
     _LOG.info('Loaded launch data.')
-    return launches
+    return (types, launches)
 
 
 def to_normal_form(dataset, fields):
@@ -309,26 +409,26 @@ def to_normal_form(dataset, fields):
     return (dataset, indexes)
 
 
-def generate_sql(output, launches, satellites, sites):
-    for launch in launches:
-        output.write(
-            """INSERT INTO launches VALUES (
-'%(id)s', '%(datetime)s', '%(COSPAR)s', '%(postPayload)s', '%(prePayload)s',
-'%(SATCAT)s', '%(LV_type)s', '%(LV_serial)s', '%(launchSite)s', '%(launchPad)s',
-'%(sitelocation)s', '%(outcome)s');
-""" % {
-    'id': launch,
-    'datetime': launches[launch]['datetime'].isoformat(),
-    'COSPAR': launches[launch]['COSPAR'],
-    'postPayload': launches[launch]['postPayload'],
-    'prePayload': launches[launch]['prePayload'],
-    'SATCAT': launches[launch]['SATCAT'],
-    'LV_type': launches[launch]['LV_type'],
-    'LV_serial': launches[launch]['LV_serial'],
-    'launchSite': launches[launch]['launchSite'],
-    'launchPad': launches[launch]['launchPad'],
-    'sitelocation': sites[launches[launch]['launchSite']],
-    'outcome': launches[launch]['outcome']})
+def print_for_sql(value):
+    if value is None:
+        return 'NULL'
+    if isinstance(value, datetime):
+        return repr(value.strftime('%Y-%m-%d %H:%M:%S'))
+    if isinstance(value, date):
+        return repr(value.strftime('%Y-%m-%d'))
+    return repr(value)
+
+
+def generate_sql(table_name, data, output):
+    for key, value in iteritems(data):
+        output.write('INSERT INTO `%s` ' % table_name)
+        if isinstance(value, dict):
+            output.write('(id, %s) VALUES (' % ', '.join(value.keys()))
+            output.write('%s, ' % repr(key))
+            output.write('%s);\n' % ', '.join(
+                (print_for_sql(x) for x in value.values())))
+        else:
+            output.write('VALUES (%s, %s);\n' % (repr(value), repr(key)))
 
 
 def main(unused_argv):
@@ -354,23 +454,44 @@ def main(unused_argv):
     type_index, country_index, operator_index, sites = load_sites(
         os.path.join(arguments.datadir, arguments.sitelist))
     sites, site_indexes = to_normal_form(sites, {
-        'type': type_index,
-        'country': country_index,
-        'operator': operator_index})
+        'typeID': type_index,
+        'countryID': country_index,
+        'operatorID': operator_index})
 
     owner_index, status_index, class_index, satellites = load_satellites(
         os.path.join(arguments.datadir, arguments.satellitelist))
     satellites, satellite_indexes = to_normal_form(satellites, {
-        'owner': owner_index,
-        'status': status_index,
-        'orbitClass': class_index})
+        'ownerID': owner_index,
+        'statusID': status_index,
+        'orbitClassID': class_index})
 
     lvtype_index, launches = load_launches(
         os.path.join(arguments.datadir, arguments.orbitalist), satellites)
     launches, launch_indexes = to_normal_form(launches, {
-        'lvType': lvtype_index})
+        'launchVehicleTypeID': lvtype_index})
 
-    generate_sql(output_file, launches, satellites, sites)
+    # We only want satellites for which we have launch data, filter the rest.
+    to_remove = list(x for x in satellites if satellites[x]['launchID'] is None)
+    for x in to_remove:
+        _ = satellites.pop(x)
+
+    generate_sql('index_SiteType', site_indexes['typeID'], output_file)
+    generate_sql('index_SiteCountry', site_indexes['countryID'], output_file)
+    generate_sql('index_SiteOperator', site_indexes['operatorID'], output_file)
+    generate_sql('index_Site', sites, output_file)
+    generate_sql(
+        'index_LaunchVehicleType', launch_indexes['launchVehicleTypeID'],
+        output_file)
+    generate_sql(
+        'index_SatelliteOrbitClass', satellite_indexes['orbitClassID'],
+        output_file)
+    generate_sql(
+        'index_SatelliteStatus', satellite_indexes['statusID'], output_file)
+    generate_sql(
+        'index_SatelliteOwner', satellite_indexes['ownerID'], output_file)
+    generate_sql('data_Launch', launches, output_file)
+    generate_sql('data_Satellite', satellites, output_file)
+
     output_file.close()
 
 
