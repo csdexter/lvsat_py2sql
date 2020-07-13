@@ -4,11 +4,13 @@ import sys
 import os
 import time
 
+# just for debugging purposes
 tic = time.perf_counter()
+
 
 filler = ""
 f_month = ""
-lsState = ""
+ls_state = ""
 match = 0
 
 filepath_lv = 'launchlog.txt'
@@ -36,8 +38,10 @@ with open(filepath_lv) as fp:
     cnt = 1
 
     while line_lv:
+
         # converting single-digit day number to two-digit, by adding a leading 0
         if line_lv[22].strip()=='' : filler="0"
+
         # converting dates to timestamp format accepted by PostgreSQL
         if line_lv[18:21] == "Jan" : f_month="-01-"
         if line_lv[18:21] == "Feb" : f_month="-02-"
