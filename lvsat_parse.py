@@ -66,8 +66,7 @@ with open(filepath_lv) as fp:
     cnt = 1
 
     while line_lv:
-        
-        if len(line_lv) < 22: exit()
+
         # converting single-digit day number to two-digit, by adding a leading 0
         if line_lv[22].strip()=='' : filler="0"
 
@@ -242,3 +241,4 @@ with open(filepath_lv) as fp:
 # just for debugging purposes
 toc = time.perf_counter()
 print(f"\nRuntime: {toc - tic:0.0f} seconds")
+
