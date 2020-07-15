@@ -53,13 +53,6 @@ Original data source are the following lists (not redistributed here, get them f
  - parsing sites.txt (for country and launchpad sites data)
  - cleaning up the strings for PostgreSQL compliant format
 
-## TODO
-
- - more satellite data
- - online mode?
- - some updating mechanism?
- - code clean-up and optimization
-
 ## Usage
 
 	python lvsat_py2sql.py >> launchesdb.sql
@@ -76,7 +69,26 @@ This is useful (and encouraged) for updating from more recent source files.
 
 Final step: simply import the created `launchesdb.sql` in PostgreSQL.
 
-### Database structure  
+### Database structure
+
+    CREATE TABLE launches (
+      launchID TEXT,
+      launchDate TIMESTAMP,
+      lv_type TEXT,
+      lv_serial TEXT,
+      sat_owner TEXT,
+      lv_prePayload TEXT,
+      lv_postPayload TEXT,
+      sat_currStatus TEXT,
+      sat_dateStatus TEXT,
+      sat_orbitClass TEXT,
+      ls_state TEXT,
+      lv_name TEXT,
+      lv_launchPad TEXT,
+      lv_outcome TEXT
+      );
+
+### Database structure (old format, deprecated)
 
 The generated database contains two tables, one for launch attempts and another one for satellites, as seen below:
 
