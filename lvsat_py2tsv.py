@@ -105,6 +105,10 @@ with open(filepath_lv) as fp:
             lv_COSPAR = line_lv[40:55].strip()
             lv_postPayload = line_lv[55:86].strip().replace("Ven{\\mu}s", "Venmus")
             lv_prePayload = line_lv[86:112].strip().replace("Ven{\\mu}s", "Venmus")
+#            if lv_prePayload.strip() == lv_postPayload.strip() :
+#                lv_Payload = lv_postPayload
+#            else:
+#                lv_Payload = lv_postPayload.strip() + " / " + lv_prePayload.strip()
             lv_SATCAT = line_lv[112:121].strip()
             lv_type = line_lv[121:144].strip()
 
@@ -166,7 +170,7 @@ with open(filepath_lv) as fp:
                     if sat_array[match][149:152] == "Oct" : g_month="-10-"
                     if sat_array[match][149:152] == "Nov" : g_month="-11-"
                     if sat_array[match][149:152] == "Dec" : g_month="-12-"
-                if g_month == "" :
+                if (g_month == "") :
                     sat_dateStatus = ""
                 else:
                     sat_dateStatus = sat_array[match][131:135].strip()+g_month+date_partial
@@ -174,11 +178,14 @@ with open(filepath_lv) as fp:
             # just for debugging purposes
             sys.stdout.write("processing year: "+lv_launchDate[0:4]+"; entry: "+str(cnt)+"\r")
 
+            # if malformed dates are still present, just ignore them
+            if len(sat_dateStatus) < 10: sat_dateStatus = ""
+
             # exporting collected data
             with open(output, 'a') as f:
-                f.write(lv_launchID.ljust(12) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + sat_owner.ljust(14) + lv_prePayload.ljust(30) + lv_postPayload.ljust(30)+ sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(25) + lv_outcome.ljust(2) + "\n")
+                f.write(lv_launchID.ljust(12) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + sat_owner.ljust(14) + lv_postPayload.ljust(30) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(25) + lv_outcome.ljust(2) + "\n")
             with open(output_sql, 'a') as g:
-                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ sat_owner +"','"+ lv_prePayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
+                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ sat_owner +"','"+ lv_postPayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
         # skipping lines with payload data only
         else: pass
 
