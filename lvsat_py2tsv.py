@@ -214,9 +214,9 @@ with open(filepath_lv) as fp:
 
             # exporting collected data
             with open(output, 'a') as f:
-                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_postPayload.ljust(28) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
+                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_prePayload.ljust(28) + lv_postPayload.ljust(28) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
             with open(output_sql, 'a') as g:
-                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ lv_postPayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
+                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ lv_prePayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
         # skipping lines with payload data only
         else: pass
 
