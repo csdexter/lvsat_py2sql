@@ -122,12 +122,25 @@ with open(filepath_lv) as fp:
             if lv_serial == "-": lv_serial = ""
 
             lv_name = line_lv[160:169].strip()
+            # since orbital launches locations are just a small subset of sites.text
+            # why not displaying them in a much more familiar name?
             if lv_name == "NIIP-5":  lv_name = "Baikonur"
             if lv_name == "GIK-5": lv_name = "Baikonur"
             if lv_name == "NIIP-53": lv_name = "Plesetsk"
             if lv_name == "GIK-1": lv_name = "Plesetsk"
+            if lv_name == "GNIIPV": lv_name = "Plesetsk"
             if lv_name == "V": lv_name = "VAFB"
+            if lv_name == "VS": lv_name = "SVAFB"
             if lv_name == "MAHIA": lv_name = "Mahia"
+            if lv_name == "WI" or lv_name == "WIMB" : lv_name = "Wallops"
+            if lv_name == "GTsP-4" or lv_name == "GTsMP-4" : lv_name = "Kapustin"
+            if lv_name == "KASC": lv_name = "Kagoshima"
+            if lv_name == "WOO": lv_name = "Woomera"
+            if lv_name == "CSG": lv_name = "Kourou"
+            if lv_name == "JQ": lv_name = "Jiuquan"
+            if lv_name == "XSC": lv_name = "Xichang"
+            if lv_name == "TNSC": lv_name = "Tanegashima"
+            if lv_name == "PALB": lv_name = "Palmachim"
 
             lv_launchPad = line_lv[169:193].strip()
             lv_outcome = line_lv[193:194].strip()
@@ -150,7 +163,7 @@ with open(filepath_lv) as fp:
             if sat_currStatus == "Deep Space": sat_currStatus = "DSO"
             if sat_currStatus == "Beyond Earth orb": sat_currStatus = "BEO"
             if sat_currStatus == "Lost": sat_currStatus = "LST"
-            if sat_currStatus == "Landed": sat_currStatus = "LAN"
+            if sat_currStatus == "Landed" or sat_currStatus == "Landed Att": sat_currStatus = "LAN"
             if sat_currStatus == "Deorbited": sat_currStatus = "DOR"
             if sat_currStatus == "Deep Space Att": sat_currStatus = "DSA"
             if sat_currStatus == "Exploded": sat_currStatus = "EXP"
@@ -214,7 +227,7 @@ with open(filepath_lv) as fp:
 
             # exporting collected data
             with open(output, 'a') as f:
-                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_prePayload.ljust(28) + lv_postPayload.ljust(28) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
+                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_prePayload.ljust(28) + lv_postPayload.ljust(28) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(12) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
             with open(output_sql, 'a') as g:
                 g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ lv_prePayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
         # skipping lines with payload data only
