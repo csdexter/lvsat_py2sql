@@ -38,7 +38,6 @@ with open(output_sql, 'w') as g:
     g.write("launchDate TIMESTAMP,\n")
     g.write("lv_type TEXT,\n")
     g.write("lv_serial TEXT,\n")
-    g.write("sat_owner TEXT,\n")
     g.write("lv_prePayload TEXT,\n")
     g.write("lv_postPayload TEXT,\n")
     g.write("sat_currStatus TEXT,\n")
@@ -139,7 +138,7 @@ with open(filepath_lv) as fp:
                 # SATCAT have an extra 0 digit in satcat.txt, dealing with that
                 if sat_array[x][0:8].strip()==("S0"+line_lv[113:120].strip()):
                     match = x
-
+            # sat_owner is flawed, since it's not mentioned for failed launches; do not use this
             sat_owner = sat_array[match][89:102].strip()
             sat_orbitClass = sat_array[match][156:165].strip()
             sat_currStatus = sat_array[match][114:131].strip()
@@ -210,11 +209,14 @@ with open(filepath_lv) as fp:
                 lv_launchPad = lv_temp.partition(",")[0]
                 lv_name = lv_temp[lv_temp.find(",")+1:lv_temp.find(" ")]
 
+            # failed launches does not have sat_orbitClass and sat_dateStatus and sat_currStatus
+            if lv_SATCAT[0]=="F": sat_currStatus = sat_dateStatus = sat_orbitClass = ""
+
             # exporting collected data
             with open(output, 'a') as f:
-                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + sat_owner.ljust(14) + lv_postPayload.ljust(28) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
+                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_postPayload.ljust(28) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(10) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
             with open(output_sql, 'a') as g:
-                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ sat_owner +"','"+ lv_postPayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
+                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ lv_postPayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
         # skipping lines with payload data only
         else: pass
 
