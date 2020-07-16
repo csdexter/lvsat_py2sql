@@ -23,6 +23,9 @@ filepath_site = 'sites.txt'
 output = 'output.txt'
 output_sql = 'output.sql'
 
+rw_except_vafb = ["1994-F03","1995-017","1995-017","1995-F03","1996-014","1996-031","1996-037","1996-049","1997-037","1998-012","1998-020","1998-071", "1999-011", "1999-026", "2000-030", "2003-030"]
+rw_except_cc = ["1998-060", "2002-004", "2003-004", "2003-017"]
+
 with open(output, 'w') as f:
     f.write("")
 
@@ -124,23 +127,77 @@ with open(filepath_lv) as fp:
             lv_name = line_lv[160:169].strip()
             # since orbital launches locations are just a small subset of sites.text
             # why not displaying them in a much more familiar name?
-            if lv_name == "NIIP-5":  lv_name = "Baikonur"
-            if lv_name == "GIK-5": lv_name = "Baikonur"
-            if lv_name == "NIIP-53": lv_name = "Plesetsk"
-            if lv_name == "GIK-1": lv_name = "Plesetsk"
-            if lv_name == "GNIIPV": lv_name = "Plesetsk"
-            if lv_name == "V": lv_name = "VAFB"
-            if lv_name == "VS": lv_name = "SVAFB"
-            if lv_name == "MAHIA": lv_name = "Mahia"
-            if lv_name == "WI" or lv_name == "WIMB" : lv_name = "Wallops"
-            if lv_name == "GTsP-4" or lv_name == "GTsMP-4" : lv_name = "Kapustin"
-            if lv_name == "KASC": lv_name = "Kagoshima"
-            if lv_name == "WOO": lv_name = "Woomera"
-            if lv_name == "CSG": lv_name = "Kourou"
-            if lv_name == "JQ": lv_name = "Jiuquan"
-            if lv_name == "XSC": lv_name = "Xichang"
-            if lv_name == "TNSC": lv_name = "Tanegashima"
-            if lv_name == "PALB": lv_name = "Palmachim"
+            if lv_name == "NIIP-5":
+                lv_name = "Baikonur"
+                if int(lv_launchDate[0:4])>1991:
+                    ls_state = "RU"
+                else:
+                    ls_state = "SU"
+            if lv_name == "GIK-5":
+                lv_name = "Baikonur"
+                if int(lv_launchDate[0:4])>1991:
+                    ls_state = "RU"
+                else:
+                    ls_state = "SU"
+            if lv_name == "NIIP-53":
+                lv_name = "Plesetsk"
+                if int(lv_launchDate[0:4])>1991:
+                    ls_state = "RU"
+                else:
+                    ls_state = "SU"
+            if lv_name == "GIK-1":
+                lv_name = "Plesetsk"
+                if int(lv_launchDate[0:4])>1991:
+                    ls_state = "RU"
+                else:
+                    ls_state = "SU"
+            if lv_name == "GNIIPV":
+                lv_name = "Plesetsk"
+                if int(lv_launchDate[0:4])>1991:
+                    ls_state = "RU"
+                else:
+                    ls_state = "SU"
+            if lv_name == "V":
+                lv_name = "VAFB"
+                ls_state = "US"
+            if lv_name == "VS":
+                lv_name = "SVAFB"
+                ls_state = "US"
+            if lv_name == "MAHIA":
+                lv_name = "Mahia"
+                ls_state = "US"
+            if lv_name == "WI" or lv_name == "WIMB":
+                lv_name = "Wallops"
+                ls_state = "US"
+            if lv_name == "GTsP-4" or lv_name == "GTsMP-4":
+                lv_name = "Kapustin"
+                ls_state = "SU"
+            if lv_name == "KASC":
+                lv_name = "Kagoshima"
+                ls_state = "JP"
+            if lv_name == "WOO":
+                lv_name = "Woomera"
+                ls_state = "AU"
+            if lv_name == "CSG":
+                lv_name = "Kourou"
+                ls_state = "EU"
+            if lv_name == "JQ":
+                lv_name = "Jiuquan"
+                ls_state = "CN"
+            if lv_name == "XSC":
+                lv_name = "Xichang"
+                ls_state = "CN"
+            if lv_name == "TNSC":
+                lv_name = "Tanegashima"
+                ls_state = "JP"
+            if lv_name == "PALB":
+                lv_name = "Palmachim"
+                ls_state = "IL"
+            if lv_name == "CC":
+                ls_state = "US"
+            if lv_name == "WEN":
+                lv_name = "Wenchang"
+                ls_state = "CN"
 
             lv_launchPad = line_lv[169:193].strip()
             lv_outcome = line_lv[193:194].strip()
@@ -151,6 +208,7 @@ with open(filepath_lv) as fp:
                 # SATCAT have an extra 0 digit in satcat.txt, dealing with that
                 if sat_array[x][0:8].strip()==("S0"+line_lv[113:120].strip()):
                     match = x
+
             # sat_owner is flawed, since it's not mentioned for failed launches; do not use this
             sat_owner = sat_array[match][89:102].strip()
             sat_orbitClass = sat_array[match][156:165].strip()
@@ -222,6 +280,10 @@ with open(filepath_lv) as fp:
                 lv_launchPad = lv_temp.partition(",")[0]
                 lv_name = lv_temp[lv_temp.find(",")+1:lv_temp.find(" ")]
 
+            # argh, screw it, I'm going to just hardcode this, I hope no one is reading this
+            if lv_launchID in rw_except_vafb: lv_name = "VAFB"
+            if lv_launchID in rw_except_cc: lv_name = "CC"
+
             # failed launches does not have sat_orbitClass and sat_dateStatus and sat_currStatus
             if lv_SATCAT[0]=="F": sat_currStatus = sat_dateStatus = sat_orbitClass = ""
 
@@ -241,4 +303,3 @@ with open(filepath_lv) as fp:
 # just for debugging purposes
 toc = time.perf_counter()
 print(f"\nRuntime: {toc - tic:0.0f} seconds")
-
