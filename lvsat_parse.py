@@ -41,8 +41,7 @@ with open(output_sql, 'w') as g:
     g.write("launchDate TIMESTAMP,\n")
     g.write("lv_type TEXT,\n")
     g.write("lv_serial TEXT,\n")
-    g.write("lv_prePayload TEXT,\n")
-    g.write("lv_postPayload TEXT,\n")
+    g.write("lv_Payload TEXT,\n")
     g.write("sat_currStatus TEXT,\n")
     g.write("sat_dateStatus TEXT,\n")
     g.write("sat_orbitClass TEXT,\n")
@@ -108,10 +107,10 @@ with open(filepath_lv) as fp:
             lv_COSPAR = line_lv[40:55].strip()
             lv_postPayload = line_lv[55:86].strip().replace("Ven{\\mu}s", "Venmus")
             lv_prePayload = line_lv[86:112].strip().replace("Ven{\\mu}s", "Venmus")
-#            if lv_prePayload.strip() == lv_postPayload.strip() :
-#                lv_Payload = lv_postPayload
-#            else:
-#                lv_Payload = lv_postPayload.strip() + " / " + lv_prePayload.strip()
+            if lv_prePayload.strip() == lv_postPayload.strip() or len(lv_prePayload)>16 or len(lv_postPayload)>16:
+                lv_Payload = lv_postPayload
+            else:
+                lv_Payload = lv_postPayload.strip() + " (" + lv_prePayload.strip() + ")"
             lv_SATCAT = line_lv[112:121].strip()
             lv_type = line_lv[121:144].strip()
 
@@ -120,6 +119,7 @@ with open(filepath_lv) as fp:
             if lv_type == "Soyuz-2-1B": lv_type = "Soyuz-2.1b"
             if lv_type == "Soyuz-2-1V": lv_type = "Soyuz-2.1v"
             if lv_type == "Falcon 9"  : lv_type = "Falcon-9"
+            if "Chang Zheng" in lv_type: lv_type = lv_type.replace("Chang Zheng ","CZ-")
 
             lv_serial = line_lv[144:160].strip()
             if lv_serial == "-": lv_serial = ""
@@ -198,6 +198,15 @@ with open(filepath_lv) as fp:
             if lv_name == "WEN":
                 lv_name = "Wenchang"
                 ls_state = "CN"
+            if lv_name == "TYSC":
+                lv_name = "Taiyuan"
+                lv_state = "CN"
+            if lv_name == "MARS":
+                lv_name = "Wallops"
+                lv_state = "US"
+            if lv_name == "VOST":
+                lv_name = "Vostochny"
+                lv_state = "RU"
 
             lv_launchPad = line_lv[169:193].strip()
             lv_outcome = line_lv[193:194].strip()
@@ -289,9 +298,9 @@ with open(filepath_lv) as fp:
 
             # exporting collected data
             with open(output, 'a') as f:
-                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_prePayload.ljust(28) + lv_postPayload.ljust(28) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(12) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
+                f.write(lv_launchID.ljust(11) + lv_launchDate.ljust(18) + lv_type.ljust(23) + lv_serial.ljust(20) + lv_Payload.ljust(45) + sat_currStatus.ljust(5) + sat_dateStatus.ljust(12) + sat_orbitClass.ljust(10) + ls_state.ljust(5) + lv_name.ljust(12) + lv_launchPad.ljust(10) + lv_outcome.ljust(2) + "\n")
             with open(output_sql, 'a') as g:
-                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ lv_prePayload.replace("'","''") +"','"+ lv_postPayload.replace("'","''") +"','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
+                g.write("INSERT INTO launches VALUES ('"+ lv_launchID +"','"+ lv_launchDate +"','"+ lv_type.replace("'","''") +"','"+ lv_serial +"','"+ lv_Payload.replace("'","''") + "','"+ sat_currStatus +"','"+ sat_dateStatus +"','"+ sat_orbitClass +"','"+ ls_state +"','"+ lv_name +"','"+ lv_launchPad +"','"+ lv_outcome + "');" + "\n")
         # skipping lines with payload data only
         else: pass
 
