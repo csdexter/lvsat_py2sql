@@ -13,8 +13,9 @@ import locale
 import logging
 import os
 import sys
-from urllib.request import urlretrieve
+import time
 
+import requests
 from six import iteritems
 
 __author__ = 'Claudiu Tănăselia <your email here>'
@@ -35,6 +36,19 @@ _FLAGS_DOWNLOAD.add_argument(
     help='Reverse of --download, fail if any input file is missing.',
     action='store_false')
 _FLAGS.set_defaults(download=True)
+_FLAGS_UPDATE = _FLAGS.add_mutually_exclusive_group(required=False)
+_FLAGS_UPDATE.add_argument(
+    '--update', dest='update',
+    help='If --download was given and an input file is present but older than '
+    'the version on https://www.planet4589.org/, download the newer version '
+    'and overwrite the local copy.',
+    action='store_true')
+_FLAGS_UPDATE.add_argument(
+    '--no-update', dest='update',
+    help='Reverse of --update, do not attempt to check for freshness (and '
+    'download) any input file that is already present.',
+    action='store_false')
+_FLAGS.set_defaults(update=False)
 _FLAGS.add_argument(
     '-D', '--datadir', default=os.getcwd(),
     help='Directory from which to read input data files (--orbitalist, '
@@ -55,7 +69,7 @@ _FLAGS.add_argument(
     help='File name to store SQL output into, will be overwritten if already '
     'existing. Use "-" to specify stdout.')
 _FLAGS.add_argument(
-    '--adddrop', default=False,
+    '--add-drop', dest='adddrop', default=False,
     help='Prepend DROP/CREATE TABLE statements to the output.',
     action='store_true')
 _LOG = logging.getLogger(__name__)
@@ -67,25 +81,53 @@ _INPUT_SOURCES = {
     _FILE_ORBITAL: 'https://www.planet4589.org/space/log/launchlogy.txt',
     _FILE_SATELLITE: 'https://www.planet4589.org/space/log/satcat.txt',
     _FILE_SITE: 'https://www.planet4589.org/space/gcat/data/tables/sites.tsv'}
+_DSIT2ISO = {
+    'A': 'AT',
+    'B': 'BE',
+    'C': 'CU',
+    'D': 'DE',
+    'E': 'ES',
+    'F': 'FR',
+    'G': 'GA',
+    'H': 'HU',
+    'I': 'IT',
+    'J': 'JP',
+    'K': 'KH',
+    'L': 'LU',
+    'M': 'MT',
+    'N': 'NO',
+    'P': 'PT',
+    'Q': 'QA',
+    'S': 'SE',
+    'T': 'TH',
+    'V': 'VA',
+    'Z': 'ZM'}
 
 
 def add_drop(output):
+    """Adds DROP/CREATE statements in SQL output.
+
+    Args:
+      output: (file)-like object that the output will be written to.
+    """
     output.write(
         """DROP TABLE IF EXISTS `data_Launch`;
 CREATE TABLE `data_Launch` (
-  `id` varchar(16) NOT NULL,
+  `id` varchar(16) NOT NULL PRIMARY KEY,
   `datetime` datetime NOT NULL,
   `launchVehicleTypeID` bigint(20) unsigned NOT NULL,
   `launchVehicleSerial` varchar(16) NOT NULL,
   `siteID` varchar(8) NOT NULL,
   `launchPad` varchar(24) NOT NULL,
   `outcome` tinyint(1) NOT NULL,
-  `reference` varchar(24) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='List of known orbital launches';
+  `reference` varchar(24) NOT NULL,
+  FOREIGN KEY (launchVehicleTypeID) REFERENCES index_LaunchVehicleType(id),
+  FOREIGN KEY (siteID) REFERENCES index_Site(id)
+);
 
 DROP TABLE IF EXISTS `data_Satellite`;
 CREATE TABLE `data_Satellite` (
-  `id` char(8) NOT NULL,
+  `id` char(8) NOT NULL PRIMARY KEY,
   `launchID` varchar(16) NOT NULL,
   `cospar` varchar(16) NOT NULL,
   `initialName` varchar(48) NOT NULL,
@@ -98,39 +140,40 @@ CREATE TABLE `data_Satellite` (
   `orbitPeriod` float NOT NULL,
   `orbitPerigee` float NOT NULL,
   `orbitApogee` float NOT NULL,
-  `orbitInclination` float NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8
-COMMENT='List of known satellites around Earth';
+  `orbitInclination` float NOT NULL,
+  FOREIGN KEY (launchID) REFERENCES data_Launch(id),
+  FOREIGN KEY (ownerID) REFERENCES index_SatelliteOwner(id),
+  FOREIGN KEY (statusID) REFERENCES index_SatelliteStatus(id),
+  FOREIGN KEY (orbitClassID) REFERENCES index_SatelliteOrbitClass(id)
+);
 
 DROP TABLE IF EXISTS `index_LaunchVehicleType`;
 CREATE TABLE `index_LaunchVehicleType` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `launchVehicleType` varchar(24) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8
-COMMENT='Index of satellite launch vehicle types';
+);
 
 DROP TABLE IF EXISTS `index_SatelliteOrbitClass`;
 CREATE TABLE `index_SatelliteOrbitClass` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `satelliteOrbitClass` varchar(8) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8
-COMMENT='Index of satellite orbit classes';
+);
 
 DROP TABLE IF EXISTS `index_SatelliteOwner`;
 CREATE TABLE `index_SatelliteOwner` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `satelliteOwnerCode` varchar(16) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of satellite owners';
+);
 
 DROP TABLE IF EXISTS `index_SatelliteStatus`;
 CREATE TABLE `index_SatelliteStatus` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `satelliteStatus` varchar(24) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of satellite statuses';
+);
 
 DROP TABLE IF EXISTS `index_Site`;
 CREATE TABLE `index_Site` (
-  `id` varchar(8) NOT NULL,
+  `id` varchar(8) NOT NULL PRIMARY KEY,
   `typeID` bigint(20) unsigned NOT NULL,
   `countryID` bigint(20) unsigned NOT NULL,
   `dateStart` date DEFAULT NULL,
@@ -141,65 +184,75 @@ CREATE TABLE `index_Site` (
   `locationLat` float NOT NULL,
   `locationLon` float NOT NULL,
   `locationError` float NOT NULL,
-  `operatorID` bigint(20) unsigned NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch sites';
+  `operatorID` bigint(20) unsigned NOT NULL,
+  FOREIGN KEY (typeID) REFERENCES index_SiteType(id),
+  FOREIGN KEY (countryID) REFERENCES index_SiteCountry(id),
+  FOREIGN KEY (operatorID) REFERENCES index_SiteOperator(id)
+);
 
 DROP TABLE IF EXISTS `index_SiteCountry`;
 CREATE TABLE `index_SiteCountry` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `siteCountryCode` varchar(8) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch site countries';
+);
 
 DROP TABLE IF EXISTS `index_SiteOperator`;
 CREATE TABLE `index_SiteOperator` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `siteOperatorCode` varchar(16) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch site operators';
+);
 
 DROP TABLE IF EXISTS `index_SiteType`;
 CREATE TABLE `index_SiteType` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `siteType` char(2) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Index of launch site types';
-
-ALTER TABLE `data_Launch`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `data_Satellite`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_LaunchVehicleType`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_SatelliteOrbitClass`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_SatelliteOwner`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_SatelliteStatus`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_Site`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_SiteCountry`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_SiteOperator`
-  ADD PRIMARY KEY (`id`);
-ALTER TABLE `index_SiteType`
-  ADD PRIMARY KEY (`id`);
-
-ALTER TABLE `index_LaunchVehicleType`
-  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
-ALTER TABLE `index_SatelliteOrbitClass`
-  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
-ALTER TABLE `index_SatelliteOwner`
-  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
-ALTER TABLE `index_SatelliteStatus`
-  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
-ALTER TABLE `index_SiteCountry`
-  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
-ALTER TABLE `index_SiteOperator`
-  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;
-ALTER TABLE `index_SiteType`
-  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT;""")
+);""")
 
 
-def ensure_present(input_name, input_type, fetch_input):
+def retrieve_file(from_url, to_file, if_older_than=None):
+    """Retrieves one input file via HTTP.
+
+    Args:
+      from_url: (str) URL to retrieve the input file from
+      to_file: (str) fully qualified path name to store the file as
+      if_older_than: (float) UNIX timestamp or None. If given, only retrieve a
+                     new copy if it's newer than the given timestamp.
+    """
+    the_headers = None
+    if if_older_than is not None:
+        # gmtime() will read a UNIX timestamp and output a struct_time with the
+        # time zone field set to GMT. strftime() will then correctly output a
+        # time zone name of 'GMT'.
+        the_headers = {
+            'If-Modified-Since': time.strftime(
+                '%a, %d %b %Y %H:%M:%S %Z', time.gmtime(if_older_than))}
+    request = requests.get(from_url, headers=the_headers)
+    if request.status_code == 304:
+        _LOG.info('Input file "%s" still fresh, no action taken.', to_file)
+        return
+    with open(to_file, 'wb') as the_file:
+        the_file.write(request.content)
+    # HTTP dates are by definition in GMT, strptime() will notice when this
+    # machine is not in GMT and return a struct_time with the time zone field
+    # set to the proper value and the rest of the fields adjusted to match.
+    # mktime() will then correctly output a UNIX timestamp taking into account
+    # the local time zone.
+    mtime = time.mktime(time.strptime(request.headers['Last-Modified'],
+                                      '%a, %d %b %Y %H:%M:%S GMT'))
+    os.utime(to_file, (mtime, mtime))
+
+
+def ensure_present(input_name, input_url, fetch_input, update_input):
+    """Ensures a given input file is present and readable.
+
+    Args:
+      input_name: (str) fully qualified path name of input file to check
+      input_url: (str) the URL to fetch/update the input file from
+      fetch_input: (bool) whether to fetch the input file from input_url if
+                   missing
+      update_input: (bool) whether to fetch the input file from input_url if
+                    present but older than the URL.
+    """
     if os.path.isdir(input_name):
         _LOG.fatal(
             'Input file "%s" appears to be a directory, cannot continue!',
@@ -222,17 +275,31 @@ def ensure_present(input_name, input_type, fetch_input):
                     os.path.dirname(input_name), input_name)
             _LOG.warning(
                 'Input file "%s" missing, downloading from "%s"!',
-                input_name, _INPUT_SOURCES[input_type])
-            _ = urlretrieve(_INPUT_SOURCES[input_type], input_name)
+                input_name, input_url)
+            retrieve_file(input_url, input_name)
     else:
         if not os.access(input_name, os.R_OK):
             _LOG.fatal(
                 'Input file "%s" exists but is not readable, cannot continue! ',
                 input_name)
+        else:
+            if update_input:
+                retrieve_file(
+                    input_url, input_name, os.stat(input_name).st_mtime)
     _LOG.info('Input file "%s" (now) present and readable.', input_name)
 
 
 def parse_date(text_date, start_date):
+    """Parses dates into Pyton objects.
+
+    Args:
+      text_date: (str) date coordinate as present in input
+      start_date: (bool) True if this is supposed to be a start date, False if
+                  an end date. Used by the reconstruction heuristic when
+                  incomplete date data was present in the input.
+    Returns:
+      (date) representation of input or None
+    """
     # Some tables use a blank to denote unknown
     if not text_date:
         return None
@@ -275,6 +342,7 @@ def parse_date(text_date, start_date):
 
 
 def parse_float(text_float):
+    """Parses float data into Python value."""
     try:
         return float(text_float)
     except ValueError:
@@ -282,6 +350,14 @@ def parse_float(text_float):
 
 
 def load_satellites(input_name):
+    """Loads satellite data.
+
+    Args:
+      input_name: (str) fully qualified path name of corresponding input file.
+    Returns:
+      (tuple) of satellite owner index, satellite status index, satellite orbit
+      class and actual satellite data.
+    """
     satellites = {}
     owners = set([])
     statuses = set([])
@@ -315,7 +391,27 @@ def load_satellites(input_name):
     return (owners, statuses, classes, satellites)
 
 
+def transform_country_code(old_code):
+    """Normalizes country codes in input."""
+    # The site data uses a mish-mash of DSIT, ISO3166-1 and invented country
+    # codes. We try to coerce the data to sanity by first converting the
+    # 1-letter DSIT codes to their 2-letter ISO3166-1 equivalents ...
+    new_code = _DSIT2ISO.get(old_code) or old_code
+    # ... and then we correct a few known exceptions.
+    if new_code == 'GUF':
+        new_code = 'GF'
+    return new_code
+
+
 def load_sites(input_name):
+    """Loads launch site data.
+
+    Args:
+      input_name: (str) fully qualified path name of corresponding input file.
+    Returns:
+      (tuple) of launch site type index, launch site location country index,
+      launch site operator index and actual launch site data.
+    """
     sites = {}
     types = set([])
     countries = set([])
@@ -332,11 +428,12 @@ def load_sites(input_name):
                 # Skip over header line, if present
                 continue
             types.add(input_record[3])
-            countries.add(input_record[4])
+            country = transform_country_code(input_record[4])
+            countries.add(country)
             operators.add(input_record[13])
             sites[input_record[0]] = {
                 'typeID': input_record[3],
-                'countryID': input_record[4],
+                'countryID': country,
                 'dateStart': parse_date(input_record[5], True),
                 'dateEnd': parse_date(input_record[6], False),
                 'shortName': input_record[7],
@@ -352,10 +449,18 @@ def load_sites(input_name):
 
 
 def prepend_extra_zero(satcat):
+    """Fixes a foreign key discrepancy between launch and satellite data."""
     return satcat[0] + '0' + satcat[1:]
 
 
 def parse_datetime(text_date):
+    """Parses date/times into Pyton objects.
+
+    Args:
+      text_date: (str) date/time coordinate as present in input.
+    Returns:
+      (datetime) representation of input.
+    """
     # Some records end with a question mark, because screw machine-readable!
     text_date = text_date.rstrip('?')
     # Some records have only minute precision, because of course they do!
@@ -365,6 +470,15 @@ def parse_datetime(text_date):
 
 
 def load_launches(input_name, satellite_data):
+    """Loads launch site data.
+
+    Args:
+      input_name: (str) fully qualified path name of corresponding input file
+      satellite_data: (dict) actual satellite data as returned by
+                      load_satellites().
+    Returns:
+      (tuple) of launch vehicle type index and actual launch data.
+    """
     launches = {}
     types = set([])
     last_id = ''
@@ -398,6 +512,14 @@ def load_launches(input_name, satellite_data):
 
 
 def to_normal_form(dataset, fields):
+    """Brings tabular datasets to the normal form.
+
+    Args:
+      dataset: (dict) dataset to transform
+      fields: (dict) indexes for all fields that should be extracted.
+    Returns:
+      (tuple) of the normalized dataset and the enumerated indexes.
+    """
     # Generate indexes first ...
     indexes = {}
     for field in fields:
@@ -410,6 +532,7 @@ def to_normal_form(dataset, fields):
 
 
 def print_for_sql(value):
+    """Formats values for use with SQL."""
     if value is None:
         return 'NULL'
     if isinstance(value, datetime):
@@ -420,6 +543,13 @@ def print_for_sql(value):
 
 
 def generate_sql(table_name, data, output):
+    """Generates SQL INSERT statements from input data.
+
+    Args:
+      table_name: (str) name of table to generate SQL INSERTs for
+      data: (dict) input data
+      output: (file)-like object SQL output will be written to.
+    """
     for key, value in iteritems(data):
         output.write('INSERT INTO `%s` ' % table_name)
         if isinstance(value, dict):
@@ -443,13 +573,13 @@ def main(unused_argv):
 
     ensure_present(
         os.path.join(arguments.datadir, arguments.satellitelist),
-        _FILE_SATELLITE, arguments.download)
+        _INPUT_SOURCES[_FILE_SATELLITE], arguments.download, arguments.update)
     ensure_present(
-        os.path.join(arguments.datadir, arguments.sitelist), _FILE_SITE,
-        arguments.download)
+        os.path.join(arguments.datadir, arguments.sitelist),
+        _INPUT_SOURCES[_FILE_SITE], arguments.download, arguments.update)
     ensure_present(
-        os.path.join(arguments.datadir, arguments.orbitalist), _FILE_ORBITAL,
-        arguments.download)
+        os.path.join(arguments.datadir, arguments.orbitalist),
+        _INPUT_SOURCES[_FILE_ORBITAL], arguments.download, arguments.update)
 
     type_index, country_index, operator_index, sites = load_sites(
         os.path.join(arguments.datadir, arguments.sitelist))
@@ -471,9 +601,9 @@ def main(unused_argv):
         'launchVehicleTypeID': lvtype_index})
 
     # We only want satellites for which we have launch data, filter the rest.
-    to_remove = list(x for x in satellites if satellites[x]['launchID'] is None)
-    for x in to_remove:
-        _ = satellites.pop(x)
+    satellites = {
+        x: y for x, y in iteritems(satellites)
+        if y['launchID'] is not None}
 
     generate_sql('index_SiteType', site_indexes['typeID'], output_file)
     generate_sql('index_SiteCountry', site_indexes['countryID'], output_file)
