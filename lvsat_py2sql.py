@@ -80,7 +80,7 @@ _FILE_SITE = 3
 _INPUT_SOURCES = {
     _FILE_ORBITAL: 'https://www.planet4589.org/space/log/launchlogy.txt',
     _FILE_SATELLITE: 'https://www.planet4589.org/space/log/satcat.txt',
-    _FILE_SITE: 'https://www.planet4589.org/space/gcat/data/tables/sites.tsv'}
+    _FILE_SITE: 'https://www.planet4589.org/space/gcat/tsv/tables/sites.tsv'}
 _DSIT2ISO = {
     'A': 'AT',
     'B': 'BE',
@@ -501,7 +501,9 @@ def load_launches(input_name, satellite_data):
                     'launchVehicleSerial': input_line[144:160].strip(),
                     'siteID': input_line[160:169].strip(),
                     'launchPad': input_line[169:193].strip(),
-                    'outcome': {'S': True, 'F': False}[input_line[193]],
+                    # Coerce 'unknown' to 'failed'
+                    'outcome': {
+                        'S': True, 'F': False, 'U': False}[input_line[193]],
                     'reference': input_line[198:].strip()}
             satellite_id = prepend_extra_zero(input_line[112:121].strip())
             if satellite_id in satellite_data:
