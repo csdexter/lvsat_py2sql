@@ -7,6 +7,7 @@
    Released under the <your licence here>.
 """
 import argparse
+import calendar
 import csv
 from datetime import datetime, date
 import locale
@@ -207,7 +208,8 @@ CREATE TABLE data_Satellite (
   FOREIGN KEY (ownerID) REFERENCES index_SatelliteOwner(id),
   FOREIGN KEY (statusID) REFERENCES index_SatelliteStatus(id),
   FOREIGN KEY (orbitClassID) REFERENCES index_SatelliteOrbitClass(id)
-);""")
+);
+""")
 
 
 def retrieve_file(from_url, to_file, if_older_than=None):
@@ -231,15 +233,29 @@ def retrieve_file(from_url, to_file, if_older_than=None):
     if request.status_code == 304:
         _LOG.info('Input file "%s" still fresh, no action taken.', to_file)
         return
+    elif request.status_code == 200:
+        if if_older_than is None:
+            _LOG.info('Input file "%s" downloaded successfully.', to_file)
+        else:
+            _LOG.warning('Input file "%s" updated successfully.', to_file)
+    else:
+        if if_older_than is None:
+            _LOG.fatal(
+                'Unable to download input file "%s", cannot continue! '
+                '(HTTP: %d)', to_file, request.status_code)
+        else:
+            _LOG.warning(
+                'Unable to update input file "%s", continuing with stale data! '
+                '(HTTP: %d)', to_file, request.status_code)
+            return
     with open(to_file, 'wb') as the_file:
         the_file.write(request.content)
-    # HTTP dates are by definition in GMT, strptime() will notice when this
-    # machine is not in GMT and return a struct_time with the time zone field
-    # set to the proper value and the rest of the fields adjusted to match.
-    # mktime() will then correctly output a UNIX timestamp taking into account
-    # the local time zone.
-    mtime = time.mktime(time.strptime(request.headers['Last-Modified'],
-                                      '%a, %d %b %Y %H:%M:%S GMT'))
+    # HTTP dates are by definition in GMT, strptime() will parse a time zone
+    # name but doesn't adjust the actual fields to match. timegm() will do
+    # that for us and then utime() will result in the correct MTime getting
+    # applied to the retrieved file.
+    mtime = calendar.timegm(time.strptime(request.headers['Last-Modified'],
+                                          '%a, %d %b %Y %H:%M:%S %Z'))
     os.utime(to_file, (mtime, mtime))
 
 
