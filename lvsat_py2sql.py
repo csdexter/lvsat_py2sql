@@ -111,101 +111,102 @@ def add_drop(output):
       output: (file)-like object that the output will be written to.
     """
     output.write(
-        """DROP TABLE IF EXISTS `data_Launch`;
-CREATE TABLE `data_Launch` (
-  `id` varchar(16) NOT NULL PRIMARY KEY,
-  `datetime` datetime NOT NULL,
-  `launchVehicleTypeID` bigint(20) unsigned NOT NULL,
-  `launchVehicleSerial` varchar(16) NOT NULL,
-  `siteID` varchar(8) NOT NULL,
-  `launchPad` varchar(24) NOT NULL,
-  `outcome` tinyint(1) NOT NULL,
-  `reference` varchar(24) NOT NULL,
-  FOREIGN KEY (launchVehicleTypeID) REFERENCES index_LaunchVehicleType(id),
-  FOREIGN KEY (siteID) REFERENCES index_Site(id)
+        """DROP TABLE IF EXISTS data_Satellite;
+DROP TABLE IF EXISTS data_Launch;
+DROP TABLE IF EXISTS index_SatelliteOwner;
+DROP TABLE IF EXISTS index_SatelliteStatus;
+DROP TABLE IF EXISTS index_SatelliteOrbitClass;
+DROP TABLE IF EXISTS index_LaunchVehicleType;
+DROP TABLE IF EXISTS index_Site;
+DROP TABLE IF EXISTS index_SiteType;
+DROP TABLE IF EXISTS index_SiteCountry;
+DROP TABLE IF EXISTS index_SiteOperator;
+
+CREATE TABLE index_SiteType (
+  id bigint(20) unsigned NOT NULL PRIMARY KEY,
+  siteType char(2) NOT NULL
 );
 
-DROP TABLE IF EXISTS `data_Satellite`;
-CREATE TABLE `data_Satellite` (
-  `id` char(8) NOT NULL PRIMARY KEY,
-  `launchID` varchar(16) NOT NULL,
-  `cospar` varchar(16) NOT NULL,
-  `initialName` varchar(48) NOT NULL,
-  `finalName` varchar(32) NOT NULL,
-  `ownerID` bigint(20) unsigned NOT NULL,
-  `statusID` bigint(20) unsigned NOT NULL,
-  `statusDate` date DEFAULT NULL,
-  `orbitEpoch` date DEFAULT NULL,
-  `orbitClassID` bigint(20) unsigned NOT NULL,
-  `orbitPeriod` float NOT NULL,
-  `orbitPerigee` float NOT NULL,
-  `orbitApogee` float NOT NULL,
-  `orbitInclination` float NOT NULL,
-  FOREIGN KEY (launchID) REFERENCES data_Launch(id),
-  FOREIGN KEY (ownerID) REFERENCES index_SatelliteOwner(id),
-  FOREIGN KEY (statusID) REFERENCES index_SatelliteStatus(id),
-  FOREIGN KEY (orbitClassID) REFERENCES index_SatelliteOrbitClass(id)
+CREATE TABLE index_SiteCountry (
+  id bigint(20) unsigned NOT NULL PRIMARY KEY,
+  siteCountryCode varchar(8) NOT NULL
 );
 
-DROP TABLE IF EXISTS `index_LaunchVehicleType`;
-CREATE TABLE `index_LaunchVehicleType` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `launchVehicleType` varchar(24) NOT NULL
+CREATE TABLE index_SiteOperator (
+  id bigint(20) unsigned NOT NULL PRIMARY KEY,
+  siteOperatorCode varchar(16) NOT NULL
 );
 
-DROP TABLE IF EXISTS `index_SatelliteOrbitClass`;
-CREATE TABLE `index_SatelliteOrbitClass` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `satelliteOrbitClass` varchar(8) NOT NULL
+CREATE TABLE index_LaunchVehicleType (
+  id bigint(20) unsigned NOT NULL PRIMARY KEY,
+  launchVehicleType varchar(24) NOT NULL
 );
 
-DROP TABLE IF EXISTS `index_SatelliteOwner`;
-CREATE TABLE `index_SatelliteOwner` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `satelliteOwnerCode` varchar(16) NOT NULL
-);
-
-DROP TABLE IF EXISTS `index_SatelliteStatus`;
-CREATE TABLE `index_SatelliteStatus` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `satelliteStatus` varchar(24) NOT NULL
-);
-
-DROP TABLE IF EXISTS `index_Site`;
-CREATE TABLE `index_Site` (
-  `id` varchar(8) NOT NULL PRIMARY KEY,
-  `typeID` bigint(20) unsigned NOT NULL,
-  `countryID` bigint(20) unsigned NOT NULL,
-  `dateStart` date DEFAULT NULL,
-  `dateEnd` date DEFAULT NULL,
-  `shortName` varchar(16) NOT NULL,
-  `fullName` varchar(128) NOT NULL,
-  `locationName` varchar(64) NOT NULL,
-  `locationLat` float NOT NULL,
-  `locationLon` float NOT NULL,
-  `locationError` float NOT NULL,
-  `operatorID` bigint(20) unsigned NOT NULL,
+CREATE TABLE index_Site (
+  id varchar(8) NOT NULL PRIMARY KEY,
+  typeID bigint(20) unsigned NOT NULL,
+  countryID bigint(20) unsigned NOT NULL,
+  dateStart date DEFAULT NULL,
+  dateEnd date DEFAULT NULL,
+  shortName varchar(16) NOT NULL,
+  fullName varchar(128) NOT NULL,
+  locationName varchar(64) NOT NULL,
+  locationLat float DEFAULT NULL,
+  locationLon float DEFAULT NULL,
+  locationError float NOT NULL,
+  operatorID bigint(20) unsigned NOT NULL,
   FOREIGN KEY (typeID) REFERENCES index_SiteType(id),
   FOREIGN KEY (countryID) REFERENCES index_SiteCountry(id),
   FOREIGN KEY (operatorID) REFERENCES index_SiteOperator(id)
 );
 
-DROP TABLE IF EXISTS `index_SiteCountry`;
-CREATE TABLE `index_SiteCountry` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `siteCountryCode` varchar(8) NOT NULL
+CREATE TABLE data_Launch (
+  id varchar(16) NOT NULL PRIMARY KEY,
+  datetime datetime NOT NULL,
+  launchVehicleTypeID bigint(20) unsigned NOT NULL,
+  launchVehicleSerial varchar(16) NOT NULL,
+  siteID varchar(8) NOT NULL,
+  launchPad varchar(24) NOT NULL,
+  outcome tinyint(1) NOT NULL,
+  reference varchar(24) NOT NULL,
+  FOREIGN KEY (launchVehicleTypeID) REFERENCES index_LaunchVehicleType(id),
+  FOREIGN KEY (siteID) REFERENCES index_Site(id)
 );
 
-DROP TABLE IF EXISTS `index_SiteOperator`;
-CREATE TABLE `index_SiteOperator` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `siteOperatorCode` varchar(16) NOT NULL
+CREATE TABLE index_SatelliteOwner (
+  id bigint(20) unsigned NOT NULL PRIMARY KEY,
+  satelliteOwnerCode varchar(16) NOT NULL
 );
 
-DROP TABLE IF EXISTS `index_SiteType`;
-CREATE TABLE `index_SiteType` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `siteType` char(2) NOT NULL
+CREATE TABLE index_SatelliteStatus (
+  id bigint(20) unsigned NOT NULL PRIMARY KEY,
+  satelliteStatus varchar(24) NOT NULL
+);
+
+CREATE TABLE index_SatelliteOrbitClass (
+  id bigint(20) unsigned NOT NULL PRIMARY KEY,
+  satelliteOrbitClass varchar(8) NOT NULL
+);
+
+CREATE TABLE data_Satellite (
+  id char(8) NOT NULL PRIMARY KEY,
+  launchID varchar(16) NOT NULL,
+  cospar varchar(16) NOT NULL,
+  initialName varchar(48) NOT NULL,
+  finalName varchar(32) NOT NULL,
+  ownerID bigint(20) unsigned NOT NULL,
+  statusID bigint(20) unsigned NOT NULL,
+  statusDate date DEFAULT NULL,
+  orbitEpoch date DEFAULT NULL,
+  orbitClassID bigint(20) unsigned NOT NULL,
+  orbitPeriod float DEFAULT NULL,
+  orbitPerigee float DEFAULT NULL,
+  orbitApogee float DEFAULT NULL,
+  orbitInclination float DEFAULT NULL,
+  FOREIGN KEY (launchID) REFERENCES data_Launch(id),
+  FOREIGN KEY (ownerID) REFERENCES index_SatelliteOwner(id),
+  FOREIGN KEY (statusID) REFERENCES index_SatelliteStatus(id),
+  FOREIGN KEY (orbitClassID) REFERENCES index_SatelliteOrbitClass(id)
 );""")
 
 
@@ -346,7 +347,7 @@ def parse_float(text_float):
     try:
         return float(text_float)
     except ValueError:
-        return float('NaN')
+        return None
 
 
 def load_satellites(input_name):
@@ -525,7 +526,7 @@ def to_normal_form(dataset, fields):
     # Generate indexes first ...
     indexes = {}
     for field in fields:
-        indexes[field] = {x: y for y, x in enumerate(fields[field])}
+        indexes[field] = {x: y for y, x in enumerate(fields[field], start=1)}
     # ... then bring the dataset to normal form
     for key in dataset:
         for field in fields:
@@ -553,7 +554,7 @@ def generate_sql(table_name, data, output):
       output: (file)-like object SQL output will be written to.
     """
     for key, value in iteritems(data):
-        output.write('INSERT INTO `%s` ' % table_name)
+        output.write('INSERT INTO %s ' % table_name)
         if isinstance(value, dict):
             output.write('(id, %s) VALUES (' % ', '.join(value.keys()))
             output.write('%s, ' % repr(key))
