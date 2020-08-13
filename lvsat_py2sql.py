@@ -486,6 +486,14 @@ def parse_datetime(text_date):
     return datetime.strptime(text_date, '%Y %b %d %H%M:%S')
 
 
+def transform_launch_location(launch_site, launch_pad):
+    """Handles data format irregularities for launch site location."""
+    field = launch_site + launch_pad
+    if ',' in field:
+        launch_site, launch_pad = field.split(',')[1].split(' ', maxsplit=1)
+    return (launch_site.strip(), launch_pad.strip())
+
+
 def load_launches(input_name, satellite_data):
     """Loads launch site data.
 
@@ -512,12 +520,14 @@ def load_launches(input_name, satellite_data):
             if launch_id:
                 last_id = launch_id
                 types.add(input_line[121:144].strip())
+                site, pad = transform_launch_location(
+                    input_line[160:169], input_line[169:193])
                 launches[launch_id] = {
                     'datetime': parse_datetime(input_line[13:34].strip()),
                     'launchVehicleTypeID': input_line[121:144].strip(),
                     'launchVehicleSerial': input_line[144:160].strip(),
-                    'siteID': input_line[160:169].strip(),
-                    'launchPad': input_line[169:193].strip(),
+                    'siteID': site,
+                    'launchPad': pad,
                     # Coerce 'unknown' to 'failed'
                     'outcome': {
                         'S': True, 'F': False, 'U': False}[input_line[193]],
