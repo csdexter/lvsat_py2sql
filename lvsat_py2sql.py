@@ -349,7 +349,7 @@ def parse_date(text_date, start_date):
                     1: 'Jan', 2: 'Apr', 3: 'Jul', 4: 'Oct'}[quarter]
             else:
                 text_date = text_date + {
-                    1: 'Mar', 2: 'Jun', 3: 'Set', 4: 'Dec'}[quarter]
+                    1: 'Mar', 2: 'Jun', 3: 'Sep', 4: 'Dec'}[quarter]
         if start_date:
             text_date = text_date + ' 1'
         else:
